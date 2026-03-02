@@ -9,5 +9,4 @@ uv.lock
 node_modules
 dist
 .eslintcache
-.idea
-.vscode
+package-lock.json
