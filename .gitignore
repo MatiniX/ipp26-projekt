@@ -10,3 +10,4 @@ node_modules
 dist
 .eslintcache
 package-lock.json
+out_file.xml
