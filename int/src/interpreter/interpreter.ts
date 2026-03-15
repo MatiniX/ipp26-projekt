@@ -33,19 +33,10 @@ import { SolObject } from "../sol26classes/sol-object.js";
 import { SolString } from "../sol26classes/sol-string.js";
 import { SolTrue } from "../sol26classes/sol-true.js";
 import { SolUserObject } from "../sol26classes/sol-user-object.js";
+import { BuiltinMethod } from "./types.js";
+import { RuntimeClass } from "./interfaces.js";
 
 const logger = getLogger("interpreter");
-
-// ── Types ──────────────────────────────────────────────────────────────────
-
-type BuiltinMethod = (recv: SolObject, args: SolObject[]) => SolObject;
-
-interface RuntimeClass {
-  name: string;
-  parentName: string | null;
-  userMethods: Map<string, Block>;
-  builtinMethods: Map<string, BuiltinMethod>;
-}
 
 type MethodLookupResult =
   | { type: "user"; block: Block; definingClass: string }
@@ -102,24 +93,7 @@ export class Interpreter {
       name: "Object",
       parentName: null,
       userMethods: new Map(),
-      builtinMethods: new Map<string, BuiltinMethod>([
-        [
-          "identicalTo:",
-          (recv, args) =>
-            recv.identicalTo(args[0] as SolObject) ? SolTrue.instance : SolFalse.instance,
-        ],
-        [
-          "equalTo:",
-          (recv, args) =>
-            recv.equalTo(args[0] as SolObject) ? SolTrue.instance : SolFalse.instance,
-        ],
-        ["asString", (recv) => new SolString(recv.asString())],
-        ["isNumber", (recv) => recv.isNumber()],
-        ["isString", (recv) => recv.isString()],
-        ["isBlock", (recv) => recv.isBlock()],
-        ["isNil", (recv) => recv.isNil()],
-        ["isBoolean", (recv) => recv.isBoolean()],
-      ]),
+      builtinMethods: SolObject.getbuiltinMethods(),
     });
 
     // ─ Integer ─
@@ -127,47 +101,7 @@ export class Interpreter {
       name: "Integer",
       parentName: "Object",
       userMethods: new Map(),
-      builtinMethods: new Map<string, BuiltinMethod>([
-        ["plus:", (recv, args) => (recv as SolInteger).plus(args[0] as SolInteger)],
-        ["minus:", (recv, args) => (recv as SolInteger).minus(args[0] as SolInteger)],
-        ["multiplyBy:", (recv, args) => (recv as SolInteger).multiplyBy(args[0] as SolInteger)],
-        [
-          "divBy:",
-          (recv, args) => {
-            const b = (args[0] as SolInteger).value;
-            if (b === 0) throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Division by zero");
-            return new SolInteger(Math.trunc((recv as SolInteger).value / b));
-          },
-        ],
-        [
-          "greaterThan:",
-          (recv, args) =>
-            (recv as SolInteger).greaterThan(args[0] as SolInteger)
-              ? SolTrue.instance
-              : SolFalse.instance,
-        ],
-        [
-          "equalTo:",
-          (recv, args) =>
-            args[0] instanceof SolInteger && (recv as SolInteger).value === args[0].value
-              ? SolTrue.instance
-              : SolFalse.instance,
-        ],
-        ["asString", (recv) => new SolString((recv as SolInteger).asString())],
-        ["asInteger", (recv) => recv],
-        [
-          "timesRepeat:",
-          (recv, args) => {
-            const n = (recv as SolInteger).value;
-            let result: SolObject = SolNil.instance;
-            for (let i = 1; i <= n; i++) {
-              result = this.sendMessage(args[0] as SolObject, "value:", [new SolInteger(i)], null);
-            }
-            return result;
-          },
-        ],
-        ["isNumber", () => SolTrue.instance],
-      ]),
+      builtinMethods: SolInteger.getBuiltinMethods(),
     });
 
     // ─ String ─
@@ -175,41 +109,7 @@ export class Interpreter {
       name: "String",
       parentName: "Object",
       userMethods: new Map(),
-      builtinMethods: new Map<string, BuiltinMethod>([
-        [
-          "print",
-          (recv) => {
-            process.stdout.write((recv as SolString).value);
-            return recv;
-          },
-        ],
-        [
-          "equalTo:",
-          (recv, args) =>
-            args[0] instanceof SolString && (recv as SolString).value === args[0].value
-              ? SolTrue.instance
-              : SolFalse.instance,
-        ],
-        ["asString", (recv) => recv],
-        ["asInteger", (recv) => (recv as SolString).asInteger()],
-        [
-          "concatenateWith:",
-          (recv, args) => {
-            if (!(args[0] instanceof SolString)) return SolNil.instance;
-            return new SolString((recv as SolString).value + args[0].value);
-          },
-        ],
-        [
-          "startsWith:endsBefore:",
-          (recv, args) =>
-            (recv as SolString).substring(
-              (args[0] as SolInteger).value,
-              (args[1] as SolInteger).value
-            ),
-        ],
-        ["length", (recv) => new SolInteger((recv as SolString).value.length)],
-        ["isString", () => SolTrue.instance],
-      ]),
+      builtinMethods: SolString.getBuiltinMethods(),
     });
 
     // ─ Nil ─
@@ -217,10 +117,7 @@ export class Interpreter {
       name: "Nil",
       parentName: "Object",
       userMethods: new Map(),
-      builtinMethods: new Map<string, BuiltinMethod>([
-        ["asString", () => new SolString("nil")],
-        ["isNil", () => SolTrue.instance],
-      ]),
+      builtinMethods: SolNil.getBuiltinMethods(),
     });
 
     // ─ True ─
@@ -228,17 +125,7 @@ export class Interpreter {
       name: "True",
       parentName: "Object",
       userMethods: new Map(),
-      builtinMethods: new Map<string, BuiltinMethod>([
-        ["asString", () => new SolString("true")],
-        ["not", () => SolFalse.instance],
-        ["and:", (_recv, args) => this.sendMessage(args[0] as SolObject, "value", [], null)],
-        ["or:", () => SolTrue.instance],
-        [
-          "ifTrue:ifFalse:",
-          (_recv, args) => this.sendMessage(args[0] as SolObject, "value", [], null),
-        ],
-        ["isBoolean", () => SolTrue.instance],
-      ]),
+      builtinMethods: SolTrue.getBuiltinMethods(),
     });
 
     // ─ False ─
@@ -246,17 +133,7 @@ export class Interpreter {
       name: "False",
       parentName: "Object",
       userMethods: new Map(),
-      builtinMethods: new Map<string, BuiltinMethod>([
-        ["asString", () => new SolString("false")],
-        ["not", () => SolTrue.instance],
-        ["and:", () => SolFalse.instance],
-        ["or:", (_recv, args) => this.sendMessage(args[0] as SolObject, "value", [], null)],
-        [
-          "ifTrue:ifFalse:",
-          (_recv, args) => this.sendMessage(args[1] as SolObject, "value", [], null),
-        ],
-        ["isBoolean", () => SolTrue.instance],
-      ]),
+      builtinMethods: SolFalse.getBuiltinMethods(),
     });
 
     // ─ Block ─
@@ -264,22 +141,7 @@ export class Interpreter {
       name: "Block",
       parentName: "Object",
       userMethods: new Map(),
-      builtinMethods: new Map<string, BuiltinMethod>([
-        [
-          "whileTrue:",
-          (recv, args) => {
-            const condBlock = recv as SolBlock;
-            let result: SolObject = SolNil.instance;
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-            while (true) {
-              const cond = this.invokeBlock(condBlock, []);
-              if (cond !== SolTrue.instance) break;
-              result = this.sendMessage(args[0] as SolObject, "value", [], null);
-            }
-            return result;
-          },
-        ],
-      ]),
+      builtinMethods: SolBlock.getBuiltinMethods(),
     });
   }
 
@@ -357,7 +219,7 @@ export class Interpreter {
 
   // ── Message dispatch ─────────────────────────────────────────────────────
 
-  private sendMessage(
+  public sendMessage(
     receiver: SolObject,
     selector: string,
     args: SolObject[],
@@ -386,7 +248,7 @@ export class Interpreter {
       if (method.type === "user") {
         return this.executeUserMethod(receiver, method.block, args, method.definingClass);
       }
-      return method.fn(receiver, args);
+      return method.fn(receiver, args, this);
     }
 
     // Instance attribute read (0 args)
@@ -460,7 +322,7 @@ export class Interpreter {
     return this.executeStatements(block.assigns, env, receiver, definingClass);
   }
 
-  private invokeBlock(block: SolBlock, args: SolObject[]): SolObject {
+  public invokeBlock(block: SolBlock, args: SolObject[]): SolObject {
     const env = new Environment(block.closureEnv);
 
     for (let i = 0; i < block.blockNode.parameters.length; i++) {
@@ -561,8 +423,8 @@ export class Interpreter {
         return SolFalse.instance;
       default: {
         const val = env.get(varNode.name);
-        if (val === undefined) {
-          throw new InterpreterError(ErrorCode.SEM_UNDEF, `Undefined variable: '${varNode.name}'`);
+        if (val instanceof ErrorCode) {
+          throw new InterpreterError(val, `Undefined variable: '${varNode.name}'`);
         }
         return val;
       }
@@ -732,6 +594,19 @@ export class Interpreter {
       current = cls.parentName;
     }
     return null;
+  }
+
+  public getNil(): SolObject {
+    return SolNil.instance;
+  }
+  public getTrue(): SolObject {
+    return SolTrue.instance;
+  }
+  public getFalse(): SolObject {
+    return SolFalse.instance;
+  }
+  public createString(val: string): SolObject {
+    return new SolString(val);
   }
 }
 

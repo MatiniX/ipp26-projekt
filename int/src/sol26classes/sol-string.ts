@@ -1,9 +1,7 @@
 import { Readable } from "node:stream";
 import { SolInteger } from "./sol-integer.js";
-import { SolNil } from "./sol-nil.js";
 import { SolObject } from "./sol-object.js";
-import { SolFalse } from "./sol-false.js";
-import { SolTrue } from "./sol-true.js";
+import { BuiltinMethod } from "../interpreter/types.js";
 
 export class SolString extends SolObject {
   private static inputStream: Readable | null = null;
@@ -48,60 +46,57 @@ export class SolString extends SolObject {
     return new SolString(line);
   }
 
-  public print(): this {
-    process.stdout.write(this.value);
-    return this;
-  }
+  public static getBuiltinMethods(): Map<string, BuiltinMethod> {
+    return new Map<string, BuiltinMethod>([
+      [
+        "print",
+        (recv) => {
+          process.stdout.write((recv as SolString).value);
+          return recv;
+        },
+      ],
+      [
+        "equalTo:",
+        (recv, args, interpreter) =>
+          args[0] instanceof SolString && (recv as SolString).value === args[0].value
+            ? interpreter.getTrue()
+            : interpreter.getFalse(),
+      ],
+      ["asString", (recv) => recv],
+      [
+        "asInteger",
+        (recv, _args, interpreter) => {
+          const num = parseInt((recv as SolString).value, 10);
+          if (isNaN(num)) {
+            return interpreter.getNil();
+          }
+          return new SolInteger(num);
+        },
+      ],
+      [
+        "concatenateWith:",
+        (recv, args, interpreter) => {
+          if (!(args[0] instanceof SolString)) return interpreter.getNil();
+          return new SolString((recv as SolString).value + args[0].value);
+        },
+      ],
+      [
+        "startsWith:endsBefore:",
+        (recv, args, interpreter) => {
+          const startIndex = (args[0] as SolInteger).value - 1;
+          const endIndex = (args[1] as SolInteger).value - 1;
+          if (startIndex < 0 || endIndex < 0) {
+            return interpreter.getNil();
+          }
+          if (endIndex - startIndex < 0) {
+            return new SolString("");
+          }
 
-  public asString(): string {
-    return this.value;
-  }
-
-  public asInteger(): SolInteger | SolNil {
-    const num = parseInt(this.value, 10);
-    if (isNaN(num)) {
-      return SolNil.instance;
-    }
-    return new SolInteger(num);
-  }
-
-  public concatenateWith(other: SolString): SolString {
-    return new SolString(this.value + other.value);
-  }
-
-  public substring(start: number, end: number): SolString | SolNil {
-    const startIndex = start - 1;
-    const endIndex = end - 1;
-    if (startIndex < 0 || endIndex < 0) {
-      return SolNil.instance;
-    }
-    if (endIndex - startIndex < 0) {
-      return new SolString("");
-    }
-
-    return new SolString(this.value.substring(startIndex, endIndex));
-  }
-
-  public length(): SolInteger {
-    return new SolInteger(this.value.length);
-  }
-
-  public equalTo(other: SolObject): boolean {
-    return other instanceof SolString && this.value === other.value;
-  }
-  public isNumber(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isString(): SolTrue {
-    return SolTrue.instance;
-  }
-  public isBlock(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isNil(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isBoolean(): SolFalse {
-    return SolFalse.instance;
+          return new SolString((recv as SolString).value.substring(startIndex, endIndex));
+        },
+      ],
+      ["length", (recv) => new SolInteger((recv as SolString).value.length)],
+      ["isString", (_recv, _args, interpreter) => interpreter.getTrue()],
+    ]);
   }
 }

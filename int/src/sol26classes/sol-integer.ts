@@ -1,7 +1,7 @@
 import { ErrorCode } from "../interpreter/error_codes.js";
-import { SolFalse } from "./sol-false.js";
+import { InterpreterError } from "../interpreter/exceptions.js";
+import { BuiltinMethod } from "../interpreter/types.js";
 import { SolObject } from "./sol-object.js";
-import { SolTrue } from "./sol-true.js";
 
 export class SolInteger extends SolObject {
   value: number;
@@ -12,55 +12,65 @@ export class SolInteger extends SolObject {
     this.value = value;
   }
 
-  public greaterThan(other: SolInteger): boolean {
-    return this.value > other.value;
-  }
-
-  public plus(other: SolInteger): SolInteger {
-    return new SolInteger(this.value + other.value);
-  }
-
-  public minus(other: SolInteger): SolInteger {
-    return new SolInteger(this.value - other.value);
-  }
-
-  public multiplyBy(other: SolInteger): SolInteger {
-    return new SolInteger(this.value * other.value);
-  }
-
-  public divBy(other: SolInteger): SolInteger | ErrorCode {
-    if (other.value === 0) {
-      //TODO: nvrátiť chybu 53
-      return ErrorCode.INT_INVALID_ARG;
-    }
-    return new SolInteger(this.value / other.value);
-  }
-
-  public asInteger(): this {
-    return this;
-  }
-
-  public asString(): string {
-    return this.value.toString();
-  }
-
-  public equalTo(other: SolObject): boolean {
-    return other instanceof SolInteger && this.value === other.value;
-  }
-
-  public isNumber(): SolTrue {
-    return SolTrue.instance;
-  }
-  public isString(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isBlock(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isNil(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isBoolean(): SolFalse {
-    return SolFalse.instance;
+  public static getBuiltinMethods(): Map<string, BuiltinMethod> {
+    return new Map<string, BuiltinMethod>([
+      [
+        "plus:",
+        (recv, args) => new SolInteger((recv as SolInteger).value + (args[0] as SolInteger).value),
+      ],
+      [
+        "minus:",
+        (recv, args) => new SolInteger((recv as SolInteger).value - (args[0] as SolInteger).value),
+      ],
+      [
+        "multiplyBy:",
+        (recv, args) => new SolInteger((recv as SolInteger).value * (args[0] as SolInteger).value),
+      ],
+      [
+        "divBy:",
+        (recv, args) => {
+          const b = (args[0] as SolInteger).value;
+          if (b === 0) throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Division by zero");
+          return new SolInteger(Math.trunc((recv as SolInteger).value / b));
+        },
+      ],
+      [
+        "greaterThan:",
+        (recv, args, interpreter) =>
+          (recv as SolInteger).value > (args[0] as SolInteger).value
+            ? interpreter.getTrue()
+            : interpreter.getFalse(),
+      ],
+      [
+        "equalTo:",
+        (recv, args, interpreter) =>
+          args[0] instanceof SolInteger && (recv as SolInteger).value === args[0].value
+            ? interpreter.getTrue()
+            : interpreter.getFalse(),
+      ],
+      [
+        "asString",
+        (recv, _args, interpreter) =>
+          interpreter.createString((recv as SolInteger).value.toString()),
+      ],
+      ["asInteger", (recv) => recv as SolInteger],
+      [
+        "timesRepeat:",
+        (recv, args, interpreter) => {
+          const n = (recv as SolInteger).value;
+          let result: SolObject = interpreter.getNil();
+          for (let i = 1; i <= n; i++) {
+            result = interpreter.sendMessage(
+              args[0] as SolObject,
+              "value:",
+              [new SolInteger(i)],
+              null
+            );
+          }
+          return result;
+        },
+      ],
+      ["isNumber", (_recv, _args, interpreter) => interpreter.getTrue()],
+    ]);
   }
 }

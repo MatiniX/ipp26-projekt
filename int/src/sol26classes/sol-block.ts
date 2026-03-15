@@ -1,8 +1,7 @@
 import type { Block } from "../interpreter/input_model.js";
 import type { Environment } from "../interpreter/environment.js";
-import { SolFalse } from "./sol-false.js";
 import { SolObject } from "./sol-object.js";
-import { SolTrue } from "./sol-true.js";
+import { BuiltinMethod } from "../interpreter/types.js";
 
 /**
  * Runtime representation of a SOL26 block.
@@ -33,22 +32,23 @@ export class SolBlock extends SolObject {
     return this.blockNode.arity;
   }
 
-  public equalTo(other: SolObject): boolean {
-    return this === other;
-  }
-  public isNumber(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isString(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isBlock(): SolTrue {
-    return SolTrue.instance;
-  }
-  public isNil(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isBoolean(): SolFalse {
-    return SolFalse.instance;
+  public static getBuiltinMethods(): Map<string, BuiltinMethod> {
+    return new Map<string, BuiltinMethod>([
+      [
+        "whileTrue:",
+        (recv, args, interpreter) => {
+          const condBlock = recv as SolBlock;
+          let result: SolObject = interpreter.getNil();
+
+          for (;;) {
+            const cond = interpreter.invokeBlock(condBlock, []);
+            if (cond !== interpreter.getTrue()) break;
+            result = interpreter.sendMessage(args[0] as SolObject, "value", [], null);
+          }
+          return result;
+        },
+      ],
+      ["isBlock", (_recv, _args, interpreter) => interpreter.getTrue()],
+    ]);
   }
 }

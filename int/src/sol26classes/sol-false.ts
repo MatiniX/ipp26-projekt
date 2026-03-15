@@ -1,5 +1,5 @@
+import { BuiltinMethod } from "../interpreter/types.js";
 import { SolObject } from "./sol-object.js";
-import { SolTrue } from "./sol-true.js";
 
 export class SolFalse extends SolObject {
   private static _instance: SolFalse | null;
@@ -16,38 +16,22 @@ export class SolFalse extends SolObject {
     return SolFalse._instance;
   }
 
-  public asString(): string {
-    return "false";
-  }
-
-  public not(): SolTrue {
-    return SolTrue.instance;
-  }
-
-  public and(): SolFalse {
-    return SolFalse.instance;
-  }
-
-  public or(other: SolObject): SolTrue | SolFalse {
-    throw new Error("Not implemented" + other.asString());
-  }
-
-  public equalTo(other: SolObject): boolean {
-    return other === SolFalse.instance;
-  }
-  public isNumber(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isString(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isBlock(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isNil(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isBoolean(): SolTrue {
-    return SolTrue.instance;
+  public static getBuiltinMethods(): Map<string, BuiltinMethod> {
+    return new Map<string, BuiltinMethod>([
+      ["asString", (_recv, _args, interpreter) => interpreter.createString("false")],
+      ["not", (_recv, _args, interpreter) => interpreter.getTrue()],
+      ["and:", (_recv, _args, interpreter) => interpreter.getFalse()],
+      [
+        "or:",
+        (_recv, args, interpreter) =>
+          interpreter.sendMessage(args[0] as SolObject, "value", [], null),
+      ],
+      [
+        "ifTrue:ifFalse:",
+        (_recv, args, interpreter) =>
+          interpreter.sendMessage(args[1] as SolObject, "value", [], null),
+      ],
+      ["isBoolean", (_recv, _args, interpreter) => interpreter.getTrue()],
+    ]);
   }
 }

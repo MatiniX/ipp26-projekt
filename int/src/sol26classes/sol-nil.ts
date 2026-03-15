@@ -1,6 +1,5 @@
-import { SolFalse } from "./sol-false.js";
+import { BuiltinMethod } from "../interpreter/types.js";
 import { SolObject } from "./sol-object.js";
-import { SolTrue } from "./sol-true.js";
 
 export class SolNil extends SolObject {
   private static _instance: SolNil | null;
@@ -17,26 +16,10 @@ export class SolNil extends SolObject {
     return SolNil._instance;
   }
 
-  public equalTo(other: SolObject): boolean {
-    return other === SolNil.instance;
-  }
-
-  public asString(): string {
-    return "nil";
-  }
-  public isNumber(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isString(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isBlock(): SolFalse {
-    return SolFalse.instance;
-  }
-  public isNil(): SolTrue {
-    return SolTrue.instance;
-  }
-  public isBoolean(): SolFalse {
-    return SolFalse.instance;
+  public static getBuiltinMethods(): Map<string, BuiltinMethod> {
+    return new Map<string, BuiltinMethod>([
+      ["asString", (_recv, _args, interpreter) => interpreter.createString("nil")],
+      ["isNil", (_recv, _args, interpreter) => interpreter.getTrue()],
+    ]);
   }
 }

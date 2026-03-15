@@ -1,4 +1,5 @@
 import type { SolObject } from "../sol26classes/sol-object.js";
+import { ErrorCode } from "./error_codes.js";
 
 export class Environment {
   private variables = new Map<string, SolObject>();
@@ -13,10 +14,15 @@ export class Environment {
   }
 
   /** Read a variable, walking up the scope chain. */
-  get(name: string): SolObject | undefined {
-    const val = this.variables.get(name);
-    if (val !== undefined) return val;
-    return this.parent?.get(name);
+  get(name: string): SolObject | ErrorCode {
+    const value = this.variables.get(name);
+    if (value !== undefined) {
+      return value;
+    }
+    if (this.parent) {
+      return this.parent.get(name);
+    }
+    return ErrorCode.SEM_UNDEF;
   }
 
   /** Check if a name is a formal parameter anywhere in the scope chain. */
@@ -27,17 +33,15 @@ export class Environment {
 
   /** Assign to a variable — update existing in scope chain, or create in current scope. */
   set(name: string, value: SolObject): void {
-    // Walk up to find existing variable
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let env: Environment | null = this;
-    while (env !== null) {
-      if (env.variables.has(name)) {
-        env.variables.set(name, value);
+    let parentEnv = this.parent;
+    while (parentEnv !== null) {
+      if (parentEnv.variables.has(name)) {
+        parentEnv.variables.set(name, value);
         return;
       }
-      env = env.parent;
+      parentEnv = parentEnv.parent;
     }
-    // New variable — create in current scope
+
     this.variables.set(name, value);
   }
 }
