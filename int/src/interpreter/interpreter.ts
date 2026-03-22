@@ -17,7 +17,6 @@ import {
   InvalidXmlError,
   ModelValidationError,
   parseProgramXml,
-  type Assign,
   type Block,
   type Expr,
   type Literal,
@@ -33,21 +32,27 @@ import { SolObject } from "../sol26classes/sol-object.js";
 import { SolString } from "../sol26classes/sol-string.js";
 import { SolTrue } from "../sol26classes/sol-true.js";
 import { SolUserObject } from "../sol26classes/sol-user-object.js";
-import { BuiltinMethod } from "./types.js";
-import { RuntimeClass } from "./interfaces.js";
+import { MethodLookupResult } from "./types.js";
+import { ExecutionContext, RuntimeClass } from "./interfaces.js";
+import {
+  BlockStatement,
+  ClassDefStatement,
+  MethodStatement,
+  SendStatement,
+  Statement,
+  StatementVisitor,
+} from "./statement.js";
+import { AssignExpression, Expression, ExpressionVisitor, SolExpresion } from "./expression.js";
 
 const logger = getLogger("interpreter");
 
-type MethodLookupResult =
-  | { type: "user"; block: Block; definingClass: string }
-  | { type: "builtin"; fn: BuiltinMethod; definingClass: string }
-  | null;
-
 // ── Interpreter ────────────────────────────────────────────────────────────
 
-export class Interpreter {
+export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<SolObject> {
   public currentProgram: Program | null = null;
   private classRegistry = new Map<string, RuntimeClass>();
+  private currentParsingClass: { name: string; userMethods: Map<string, Block> } | null = null;
+  private contextStack: ExecutionContext[] = [];
 
   // ── Loading ──────────────────────────────────────────────────────────────
 
@@ -73,22 +78,155 @@ export class Interpreter {
     logger.info("Executing program");
     SolString.setInputStream(inputIo);
 
-    this.registerBuiltinClasses();
-    this.registerUserClasses();
+    if (!this.currentProgram) {
+      throw new InterpreterError(ErrorCode.GENERAL_INPUT, "No program loaded");
+    }
 
-    // Validate Main class and run method
+    this.registerBuiltinClasses();
+    for (const cls of this.currentProgram.classes) {
+      this.visitClassDef(new ClassDefStatement(cls.name, cls.parent, cls.methods));
+    }
+
+    for (const cls of this.currentProgram.classes) {
+      if (!this.classRegistry.has(cls.parent)) {
+        throw new InterpreterError(ErrorCode.SEM_UNDEF, `Undefined parent class: ${cls.parent}`);
+      }
+    }
+
     if (!this.lookupMethod("Main", "run")) {
       throw new InterpreterError(ErrorCode.SEM_MAIN, "Missing Main class or its run method");
     }
 
-    const mainInstance = new SolUserObject("Main");
-    this.sendMessage(mainInstance, "run", [], null);
+    this.executeStatement(new SendStatement("Main", "run", []));
+  }
+
+  visitExpr(expr: SolExpresion): SolObject {
+    if (!this.currentContext) {
+      throw new InterpreterError(ErrorCode.GENERAL_OTHER, "No execution context available");
+    }
+    const { env, selfRef, definingClassName } = this.currentContext;
+
+    if (expr.literal) return this.evaluateLiteral(expr.literal);
+    if (expr.variable) return this.evaluateVar(expr.variable, env, selfRef);
+    if (expr.block) return this.evaluateBlockLiteral(expr.block, env, selfRef, definingClassName);
+    if (expr.send) return this.evaluateSend(expr.send, env, selfRef, definingClassName);
+
+    throw new InterpreterError(ErrorCode.GENERAL_OTHER, "Invalid expression node");
+  }
+
+  visitAssign(expr: AssignExpression): SolObject {
+    if (!this.currentContext) {
+      throw new InterpreterError(ErrorCode.GENERAL_OTHER, "No execution context available");
+    }
+    const { env } = this.currentContext;
+
+    const solExpr = new SolExpresion(
+      expr.expr.literal,
+      expr.expr.var,
+      expr.expr.block,
+      expr.expr.send
+    );
+    const value = this.evaluateExpression(solExpr);
+
+    const targetName = expr.target.name;
+
+    if (env.isParameter(targetName)) {
+      throw new InterpreterError(
+        ErrorCode.SEM_COLLISION,
+        `Cannot assign to formal parameter '${targetName}'`
+      );
+    }
+
+    env.set(targetName, value);
+    return value;
+  }
+
+  visitBlock(stmt: BlockStatement): void {
+    if (!this.currentContext) {
+      throw new InterpreterError(ErrorCode.GENERAL_OTHER, "No execution context available");
+    }
+    this.currentContext.lastBlockResult = SolNil.instance;
+
+    for (const assign of stmt.assigns) {
+      const assignExpr = new AssignExpression(assign.target, assign.expr);
+      const value = this.evaluateExpression(assignExpr);
+      this.currentContext.lastBlockResult = value;
+    }
+  }
+
+  visitClassDef(stmt: ClassDefStatement): void {
+    const builtinNames = ["Object", "Integer", "String", "Nil", "True", "False", "Block"];
+    if (builtinNames.includes(stmt.name)) {
+      throw new InterpreterError(
+        ErrorCode.SEM_ERROR,
+        `Cannot redefine built-in class: ${stmt.name}`
+      );
+    }
+
+    if (this.classRegistry.has(stmt.name)) {
+      throw new InterpreterError(ErrorCode.SEM_ERROR, `Duplicate class definition: ${stmt.name}`);
+    }
+
+    this.currentParsingClass = {
+      name: stmt.name,
+      userMethods: new Map<string, Block>(),
+    };
+    for (const method of stmt.methods) {
+      this.executeStatement(new MethodStatement(method.selector, method.block));
+    }
+
+    this.classRegistry.set(stmt.name, {
+      name: stmt.name,
+      parentName: stmt.parentName,
+      userMethods: this.currentParsingClass.userMethods,
+      builtinMethods: new Map(),
+    });
+  }
+
+  visitMethod(stmt: MethodStatement): void {
+    if (!this.currentParsingClass) {
+      throw new InterpreterError(ErrorCode.GENERAL_OTHER, "Method defined outside of a class.");
+    }
+
+    if (stmt.block.arity !== this.selectorArity(stmt.selector)) {
+      throw new InterpreterError(
+        ErrorCode.SEM_ARITY,
+        `Arity mismatch for method ${stmt.selector}`
+      );
+    }
+
+    this.currentParsingClass.userMethods.set(stmt.selector, stmt.block);
+  }
+
+  visitSend(stmt: SendStatement): void {
+    const receiverInst = new SolUserObject(stmt.receiver);
+
+    const evaluatedArgs: SolObject[] = stmt.args.map((a) => {
+      const solExpr = new SolExpresion(a.expr.literal, a.expr.var, a.expr.block, a.expr.send);
+      return this.evaluateExpression(solExpr);
+    });
+
+    this.sendMessage(receiverInst, stmt.selector, evaluatedArgs, null);
+  }
+
+  private get currentContext() {
+    if (this.contextStack.length === 0) {
+      throw new InterpreterError(ErrorCode.GENERAL_OTHER, "No execution context available");
+    }
+    return this.contextStack[this.contextStack.length - 1];
+  }
+
+  private executeStatement(stmt: Statement) {
+    stmt.accept(this);
+  }
+
+  private evaluateExpression(expression: Expression): SolObject {
+    return expression.accept(this);
   }
 
   // ── Class registration ───────────────────────────────────────────────────
 
   private registerBuiltinClasses(): void {
-    // ─ Object ─
     this.classRegistry.set("Object", {
       name: "Object",
       parentName: null,
@@ -96,7 +234,6 @@ export class Interpreter {
       builtinMethods: SolObject.getbuiltinMethods(),
     });
 
-    // ─ Integer ─
     this.classRegistry.set("Integer", {
       name: "Integer",
       parentName: "Object",
@@ -104,7 +241,6 @@ export class Interpreter {
       builtinMethods: SolInteger.getBuiltinMethods(),
     });
 
-    // ─ String ─
     this.classRegistry.set("String", {
       name: "String",
       parentName: "Object",
@@ -112,7 +248,6 @@ export class Interpreter {
       builtinMethods: SolString.getBuiltinMethods(),
     });
 
-    // ─ Nil ─
     this.classRegistry.set("Nil", {
       name: "Nil",
       parentName: "Object",
@@ -120,7 +255,6 @@ export class Interpreter {
       builtinMethods: SolNil.getBuiltinMethods(),
     });
 
-    // ─ True ─
     this.classRegistry.set("True", {
       name: "True",
       parentName: "Object",
@@ -128,7 +262,6 @@ export class Interpreter {
       builtinMethods: SolTrue.getBuiltinMethods(),
     });
 
-    // ─ False ─
     this.classRegistry.set("False", {
       name: "False",
       parentName: "Object",
@@ -136,62 +269,12 @@ export class Interpreter {
       builtinMethods: SolFalse.getBuiltinMethods(),
     });
 
-    // ─ Block ─
     this.classRegistry.set("Block", {
       name: "Block",
       parentName: "Object",
       userMethods: new Map(),
       builtinMethods: SolBlock.getBuiltinMethods(),
     });
-  }
-
-  private registerUserClasses(): void {
-    if (!this.currentProgram) return;
-
-    // First pass: register all classes
-    for (const classDef of this.currentProgram.classes) {
-      const builtinNames = ["Object", "Integer", "String", "Nil", "True", "False", "Block"];
-      if (builtinNames.includes(classDef.name)) {
-        throw new InterpreterError(
-          ErrorCode.SEM_ERROR,
-          `Cannot redefine built-in class: ${classDef.name}`
-        );
-      }
-      if (this.classRegistry.has(classDef.name)) {
-        throw new InterpreterError(
-          ErrorCode.SEM_ERROR,
-          `Duplicate class definition: ${classDef.name}`
-        );
-      }
-
-      const userMethods = new Map<string, Block>();
-      for (const method of classDef.methods) {
-        if (method.block.arity !== this.selectorArity(method.selector)) {
-          throw new InterpreterError(
-            ErrorCode.SEM_ARITY,
-            `Arity mismatch for method ${method.selector} in ${classDef.name}`
-          );
-        }
-        userMethods.set(method.selector, method.block);
-      }
-
-      this.classRegistry.set(classDef.name, {
-        name: classDef.name,
-        parentName: classDef.parent,
-        userMethods,
-        builtinMethods: new Map(),
-      });
-    }
-
-    // Second pass: validate parent classes exist
-    for (const classDef of this.currentProgram.classes) {
-      if (!this.classRegistry.has(classDef.parent)) {
-        throw new InterpreterError(
-          ErrorCode.SEM_UNDEF,
-          `Undefined parent class: ${classDef.parent}`
-        );
-      }
-    }
   }
 
   private selectorArity(selector: string): number {
@@ -319,7 +402,22 @@ export class Interpreter {
       env.defineParameter(name, args[i] as SolObject);
     }
 
-    return this.executeStatements(block.assigns, env, receiver, definingClass);
+    this.contextStack.push({
+      env: env,
+      selfRef: receiver,
+      definingClassName: definingClass,
+      lastBlockResult: null,
+    });
+
+    try {
+      const blockStmt = new BlockStatement(block.arity, block.parameters, block.assigns);
+      this.executeStatement(blockStmt);
+
+      return this.currentContext?.lastBlockResult || SolNil.instance;
+    } finally {
+      // Po dobehnutí metódy vyhoď kontext zo stacku
+      this.contextStack.pop();
+    }
   }
 
   public invokeBlock(block: SolBlock, args: SolObject[]): SolObject {
@@ -331,39 +429,25 @@ export class Interpreter {
       env.defineParameter(name, args[i] as SolObject);
     }
 
-    return this.executeStatements(
-      block.blockNode.assigns,
-      env,
-      block.selfRef,
-      block.definingClassName
-    );
-  }
+    this.contextStack.push({
+      env: env,
+      selfRef: block.selfRef,
+      definingClassName: block.definingClassName,
+      lastBlockResult: null,
+    });
 
-  private executeStatements(
-    assigns: Assign[],
-    env: Environment,
-    selfRef: SolObject | null,
-    definingClassName: string | null
-  ): SolObject {
-    let result: SolObject = SolNil.instance;
+    try {
+      const blockStmt = new BlockStatement(
+        block.blockNode.arity,
+        block.blockNode.parameters,
+        block.blockNode.assigns
+      );
+      this.executeStatement(blockStmt);
 
-    for (const assign of assigns) {
-      const value = this.evaluateExpr(assign.expr, env, selfRef, definingClassName);
-      const targetName = assign.target.name;
-
-      // Cannot assign to formal parameters
-      if (env.isParameter(targetName)) {
-        throw new InterpreterError(
-          ErrorCode.SEM_COLLISION,
-          `Cannot assign to formal parameter '${targetName}'`
-        );
-      }
-
-      env.set(targetName, value);
-      result = value;
+      return this.currentContext?.lastBlockResult || SolNil.instance;
+    } finally {
+      this.contextStack.pop();
     }
-
-    return result;
   }
 
   // ── Expression evaluation ────────────────────────────────────────────────
