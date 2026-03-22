@@ -16,7 +16,7 @@ import logging
 import sys
 from pathlib import Path
 
-from models import TestReport
+from models import TestCaseDefinition, TestReport
 
 logger = logging.getLogger("main")
 
@@ -198,6 +198,8 @@ def main() -> None:
         logging.root.setLevel(logging.INFO)
 
     # TODO: Your code for discovering and executing the test cases goes here.
+    test_cases = load_tests_from_directory(args.tests_dir, args.recursive)
+
 
     # Example of how to write the final report:
     report = TestReport(discovered_test_cases=[], unexecuted={}, results={})
@@ -206,3 +208,14 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def load_tests_from_directory(directory: Path, recursive: bool) -> list[TestCaseDefinition]:
+    """
+    Loads test cases from the specified directory, optionally searching recursively in subdirectories.
+    """
+    test_cases = []
+    for file_path in directory.glob("*.test"):
+        if file_path.is_file():
+            print(file_path.name)
+    return test_cases
