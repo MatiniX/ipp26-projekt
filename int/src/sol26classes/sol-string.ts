@@ -51,7 +51,17 @@ export class SolString extends SolObject {
       [
         "print",
         (recv) => {
-          process.stdout.write((recv as SolString).value);
+          const strVal = (recv as SolString).value;
+          // '\\' -> '\'
+          // '\n' -> native newline
+          // '\'' -> '''
+          const decoded = strVal.replace(/\\(.)/g, (match, p1) => {
+            if (p1 === "n") return "\n";
+            if (p1 === "\\") return "\\";
+            if (p1 === "'") return "'";
+            return match;
+          });
+          process.stdout.write(decoded);
           return recv;
         },
       ],
