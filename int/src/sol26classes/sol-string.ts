@@ -97,6 +97,7 @@ export class SolString extends SolObject {
       ],
       ["length", (recv) => new SolInteger((recv as SolString).value.length)],
       ["isString", (_recv, _args, interpreter) => interpreter.getTrue()],
+      ["read", () => SolString.read()],
     ]);
   }
 }

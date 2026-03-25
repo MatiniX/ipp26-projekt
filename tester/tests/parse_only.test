@@ -1,0 +1,10 @@
++++ parser_only_suite
+*** Testing parse only phase
+!C! 0
+>>> 5
+
+class Main : Object {
+    run [ |
+        _ := 'Hello Parser' print.
+    ]
+}

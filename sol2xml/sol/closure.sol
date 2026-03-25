@@ -20,7 +20,9 @@ o := self giveObjectWithBlock.
 _ := String read.
 "V rámci vyhodnocení bloku načte číslo 3, vrací 12 (9 + 3)."
 r1 := ((o block) value).
+_ := ((r1 asString) print).
 "V rámci vyhodnocení bloku načte číslo 4, vrací 13 (9 + 4)."
 r2 := ((o block) value).
+_ := ((r2 asString) print).
 ]
 }

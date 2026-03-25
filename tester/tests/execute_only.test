@@ -1,0 +1,9 @@
++++ execute_only_suite
+*** Testing execute only phase with bad XML
+!I! 20
+>>> 5
+
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="SOL26">
+   <unclosed_tag> This is definitely invalid XML for solint
+</program>

@@ -123,6 +123,20 @@
           </expr>
         </assign>
         <assign order="4">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <var name="r1"/>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="5">
           <var name="r2"/>
           <expr>
             <send selector="value">
@@ -130,6 +144,20 @@
                 <send selector="block">
                   <expr>
                     <var name="o"/>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="6">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <var name="r2"/>
                   </expr>
                 </send>
               </expr>
