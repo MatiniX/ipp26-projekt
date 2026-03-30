@@ -525,7 +525,7 @@ def execute_test_case(
             total_points=0, passed_points=0, test_results={}
         )
 
-    sol2xml_path = os.environ.get("SOL2XML_PATH", "../sol2xml/sol_to_xml.py")
+    sol2xml_path = os.environ.get("SOL2XML_PATH", "./sol2xml/sol_to_xml.py")
     solint_path = os.environ.get("SOLINT_PATH", "../int/dist/solint.js")
 
     parser_cmd = ["python3", sol2xml_path]

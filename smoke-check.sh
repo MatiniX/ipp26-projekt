@@ -15,7 +15,7 @@ docker build --target runtime --tag "${RUNTIME_TAG}" "${ROOT_DIR}"
 
 echo "[smoke] Runtime smoke run on sample XML"
 docker run --rm \
-  -v "${ROOT_DIR}/sol2xml/xml:/opt/xml:ro" \
+  -v "${ROOT_DIR}/tester/sol2xml/xml:/opt/xml:ro" \
   "${RUNTIME_TAG}" \
   --source /opt/xml/example.xml
 

@@ -103,9 +103,9 @@ RUN /opt/tester/.venv/bin/pip install -r /opt/tester/requirements.txt
 COPY tester/src/ /opt/tester/src/
 
 # Instalacia sol2xml prekladaca a jeho zavislosti
-COPY sol2xml/requirements.txt /opt/sol2xml/
+COPY tester/sol2xml/requirements.txt /opt/sol2xml/
 RUN /opt/tester/.venv/bin/pip install -r /opt/sol2xml/requirements.txt
-COPY sol2xml/sol_to_xml.py /opt/sol2xml/
+COPY tester/sol2xml/sol_to_xml.py /opt/sol2xml/
 
 # Entry point aktivuje virtualne prostredie a spusti tester.
 COPY tester/docker-entrypoint.sh /opt/tester/docker-entrypoint.sh
