@@ -10,6 +10,7 @@ IPP: You can implement the entire tool in this file if you wish, but it is recom
 
 Author: Ondřej Ondryáš <iondryas@fit.vut.cz>
 """
+
 import argparse
 import logging
 import os
@@ -31,6 +32,8 @@ from models import (
 )
 
 logger = logging.getLogger("main")
+
+
 class CliArguments(argparse.Namespace):
     """
     Represents the parsed command-line arguments.
@@ -49,6 +52,7 @@ class CliArguments(argparse.Namespace):
     verbose: int
     regex_filters: bool
 
+
 def write_result(result_report: TestReport, output_file: Path | None) -> None:
     """
     Writes the final report to the specified output file or standard output if no file is provided.
@@ -59,6 +63,7 @@ def write_result(result_report: TestReport, output_file: Path | None) -> None:
             f.write(result_json)
     else:
         print(result_json)
+
 
 def parse_arguments() -> CliArguments:
     """
@@ -173,6 +178,7 @@ def parse_arguments() -> CliArguments:
 
     return args
 
+
 def _determine_test_type_and_codes(
     parser_codes: list[int], interpreter_codes: list[int], file_path: Path
 ) -> tuple[TestCaseType, list[int] | None, list[int] | None] | None:
@@ -202,6 +208,7 @@ def _determine_test_type_and_codes(
             return None
 
     return t_type, expected_parser, expected_interpreter
+
 
 def load_tests_from_directory(directory: Path, recursive: bool) -> list[TestCaseDefinition]:
     test_cases = []
@@ -258,6 +265,7 @@ def load_tests_from_directory(directory: Path, recursive: bool) -> list[TestCase
 
     return test_cases
 
+
 def get_source_code(file_path: Path) -> str:
     """Pomocná funkcia na extrakciu čistého kódu z .test súboru."""
     content = file_path.read_text(encoding="utf-8")
@@ -266,6 +274,7 @@ def get_source_code(file_path: Path) -> str:
         if line.strip() == "":
             return "\n".join(lines[i + 1 :])
     return ""
+
 
 def _execute_combined_test(
     test_case: TestCaseDefinition,
@@ -277,7 +286,7 @@ def _execute_combined_test(
 
     # --- 1. KROK: SPÚŠŤANIE PARSERA ---
     # Pošleme mu zdrojový kód cez stdin
-    parser_proc = subprocess.run(parser_cmd, input=source_code, text=True, capture_output=True)
+    parser_proc = subprocess.run(parser_cmd, input=source_code, text=True, capture_output=True)  # noqa: S603
 
     category_report.total_points += test_case.points
     if parser_proc.returncode not in (test_case.expected_parser_exit_codes or []):
@@ -301,9 +310,9 @@ def _execute_combined_test(
         # Ak test obsahuje programový vstup (.in)
         if test_case.stdin_file:
             with Path.open(test_case.stdin_file) as f_in:
-                int_proc = subprocess.run(int_cmd, stdin=f_in, text=True, capture_output=True)
+                int_proc = subprocess.run(int_cmd, stdin=f_in, text=True, capture_output=True)  # noqa: S603
         else:
-            int_proc = subprocess.run(int_cmd, text=True, capture_output=True)
+            int_proc = subprocess.run(int_cmd, text=True, capture_output=True)  # noqa: S603
 
     if int_proc.returncode not in (test_case.expected_interpreter_exit_codes or []):
         report = TestCaseReport(
@@ -327,7 +336,7 @@ def _execute_combined_test(
 
             # Podla zadania bez iných parametrov
             diff_cmd = ["diff", str(test_case.expected_stdout_file), temp_out.name]
-            diff_proc = subprocess.run(diff_cmd, text=True, capture_output=True)
+            diff_proc = subprocess.run(diff_cmd, text=True, capture_output=True)  # noqa: S603
 
             if diff_proc.returncode != 0:
                 report = TestCaseReport(
@@ -355,13 +364,14 @@ def _execute_combined_test(
     category_report.test_results[test_case.name] = report
     category_report.passed_points += test_case.points
 
+
 def _execute_parse_only_test(
     test_case: TestCaseDefinition,
     category_report: CategoryReport,
     parser_cmd: list[str],
 ) -> None:
     source_code = get_source_code(test_case.test_source_path)
-    parser_proc = subprocess.run(parser_cmd, input=source_code, text=True, capture_output=True)
+    parser_proc = subprocess.run(parser_cmd, input=source_code, text=True, capture_output=True)  # noqa: S603
 
     category_report.total_points += test_case.points
     if parser_proc.returncode not in (test_case.expected_parser_exit_codes or []):
@@ -383,6 +393,7 @@ def _execute_parse_only_test(
     category_report.test_results[test_case.name] = report
     category_report.passed_points += test_case.points
 
+
 def _execute_execute_only_test(
     test_case: TestCaseDefinition,
     category_report: CategoryReport,
@@ -399,9 +410,9 @@ def _execute_execute_only_test(
 
         if test_case.stdin_file:
             with Path.open(test_case.stdin_file) as f_in:
-                int_proc = subprocess.run(int_cmd, stdin=f_in, text=True, capture_output=True)
+                int_proc = subprocess.run(int_cmd, stdin=f_in, text=True, capture_output=True)  # noqa: S603
         else:
-            int_proc = subprocess.run(int_cmd, text=True, capture_output=True)
+            int_proc = subprocess.run(int_cmd, text=True, capture_output=True)  # noqa: S603
 
     if int_proc.returncode not in (test_case.expected_interpreter_exit_codes or []):
         report = TestCaseReport(
@@ -420,7 +431,7 @@ def _execute_execute_only_test(
             temp_out.flush()
 
             diff_cmd = ["diff", str(test_case.expected_stdout_file), temp_out.name]
-            diff_proc = subprocess.run(diff_cmd, text=True, capture_output=True)
+            diff_proc = subprocess.run(diff_cmd, text=True, capture_output=True)  # noqa: S603
 
             if diff_proc.returncode != 0:
                 print(diff_proc.stdout)
@@ -443,10 +454,17 @@ def _execute_execute_only_test(
     category_report.test_results[test_case.name] = report
     category_report.passed_points += test_case.points
 
-def flatten_args(arg_list: list[list[str]] | None) -> list[str]:
+
+def flatten_args(arg_list: list[str] | list[list[str]] | None) -> list[str]:
     if not arg_list:
         return []
-    return [item for sublist in arg_list for item in sublist]
+
+    first_item = arg_list[0]
+    if isinstance(first_item, list):
+        return [item for sublist in arg_list for item in sublist]
+
+    return [item for item in arg_list if isinstance(item, str)]
+
 
 def matches_filter(value: str, patterns: list[str], is_regex: bool) -> bool:
     for p in patterns:
@@ -457,6 +475,7 @@ def matches_filter(value: str, patterns: list[str], is_regex: bool) -> bool:
             if p == value:
                 return True
     return False
+
 
 def is_test_included(tc: TestCaseDefinition, args: CliArguments) -> bool:
     includes = flatten_args(args.include)
@@ -496,6 +515,7 @@ def is_test_included(tc: TestCaseDefinition, args: CliArguments) -> bool:
         excluded = True
 
     return not excluded
+
 
 def execute_test_case(
     test_case: TestCaseDefinition, test_results: dict[str, CategoryReport]

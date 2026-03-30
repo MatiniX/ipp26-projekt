@@ -92,18 +92,30 @@ RUN apt-get update && \
         bash \
     && rm -rf /var/lib/apt/lists/*
 
+# Vytvorenie virtualneho prostredia pre tester
+RUN python3 -m venv /opt/tester/.venv
+
 # Instalacia Python zavislosti pre tester (pydantic)
 COPY tester/requirements.txt /opt/tester/
-RUN pip install --break-system-packages -r /opt/tester/requirements.txt
+RUN /opt/tester/.venv/bin/pip install -r /opt/tester/requirements.txt
 
 # Kopirovanie zdrojoveho kodu testera
 COPY tester/src/ /opt/tester/src/
 
 # Instalacia sol2xml prekladaca a jeho zavislosti
 COPY sol2xml/requirements.txt /opt/sol2xml/
-RUN pip install --break-system-packages -r /opt/sol2xml/requirements.txt
+RUN /opt/tester/.venv/bin/pip install -r /opt/sol2xml/requirements.txt
 COPY sol2xml/sol_to_xml.py /opt/sol2xml/
+
+# Entry point aktivuje virtualne prostredie a spusti tester.
+COPY tester/docker-entrypoint.sh /opt/tester/docker-entrypoint.sh
+RUN chmod +x /opt/tester/docker-entrypoint.sh
+
+# Tester hlada parser/interpreter cez premenne prostredia.
+# Tieto cesty su kompatibilne s layoutom image a CLI prikladom zo zadania.
+ENV SOL2XML_PATH=/opt/sol2xml/sol_to_xml.py
+ENV SOLINT_PATH=/app/dist/solint.js
 
 WORKDIR /opt/tester
 
-ENTRYPOINT ["python3", "src/tester.py"]
+ENTRYPOINT ["/opt/tester/docker-entrypoint.sh"]
