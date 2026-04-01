@@ -1,30 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<program language="SOL26" description="Inicializacia zakladnych stringov">
+<program language="SOL26" description="Nil singleton behavior">
+  <class name="MyNil" parent="Nil"/>
   <class name="Main" parent="Object">
     <method selector="run">
       <block arity="0">
         <assign order="1">
-          <var name="s1"/>
-          <expr>
-            <literal class="String" value="Hello"/>
-          </expr>
-        </assign>
-        <assign order="2">
-          <var name="s2"/>
-          <expr>
-            <literal class="String" value=" World"/>
-          </expr>
-        </assign>
-        <assign order="3">
-          <var name="s3"/>
-          <expr>
-            <literal class="String" value="42"/>
-          </expr>
-        </assign>
-        <assign order="4">
           <var name="nl"/>
           <expr>
             <literal class="String" value="\n"/>
+          </expr>
+        </assign>
+        <assign order="2">
+          <var name="n1"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="Nil"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="3">
+          <var name="n2"/>
+          <expr>
+            <send selector="from:">
+              <expr>
+                <literal class="class" value="Nil"/>
+              </expr>
+              <arg order="1">
+                <expr>
+                  <literal class="Nil" value="nil"/>
+                </expr>
+              </arg>
+            </send>
+          </expr>
+        </assign>
+        <assign order="4">
+          <var name="n3"/>
+          <expr>
+            <literal class="Nil" value="nil"/>
           </expr>
         </assign>
         <assign order="5">
@@ -32,7 +46,20 @@
           <expr>
             <send selector="print">
               <expr>
-                <var name="s1"/>
+                <send selector="asString">
+                  <expr>
+                    <send selector="identicalTo:">
+                      <expr>
+                        <var name="n1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="n2"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
               </expr>
             </send>
           </expr>
@@ -52,7 +79,20 @@
           <expr>
             <send selector="print">
               <expr>
-                <literal class="String" value="--- concatenateWith: ---"/>
+                <send selector="asString">
+                  <expr>
+                    <send selector="identicalTo:">
+                      <expr>
+                        <var name="n2"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="n3"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
               </expr>
             </send>
           </expr>
@@ -68,17 +108,25 @@
           </expr>
         </assign>
         <assign order="9">
-          <var name="s4"/>
+          <var name="_"/>
           <expr>
-            <send selector="concatenateWith:">
+            <send selector="print">
               <expr>
-                <var name="s1"/>
+                <send selector="asString">
+                  <expr>
+                    <send selector="equalTo:">
+                      <expr>
+                        <var name="n1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="n3"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
               </expr>
-              <arg order="1">
-                <expr>
-                  <var name="s2"/>
-                </expr>
-              </arg>
             </send>
           </expr>
         </assign>
@@ -87,7 +135,7 @@
           <expr>
             <send selector="print">
               <expr>
-                <var name="s4"/>
+                <var name="nl"/>
               </expr>
             </send>
           </expr>
@@ -97,7 +145,11 @@
           <expr>
             <send selector="print">
               <expr>
-                <var name="nl"/>
+                <send selector="asString">
+                  <expr>
+                    <var name="n1"/>
+                  </expr>
+                </send>
               </expr>
             </send>
           </expr>
@@ -107,7 +159,7 @@
           <expr>
             <send selector="print">
               <expr>
-                <literal class="String" value="--- length ---"/>
+                <var name="nl"/>
               </expr>
             </send>
           </expr>
@@ -117,17 +169,25 @@
           <expr>
             <send selector="print">
               <expr>
-                <var name="nl"/>
+                <send selector="asString">
+                  <expr>
+                    <send selector="isNil">
+                      <expr>
+                        <var name="n1"/>
+                      </expr>
+                    </send>
+                  </expr>
+                </send>
               </expr>
             </send>
           </expr>
         </assign>
         <assign order="14">
-          <var name="len"/>
+          <var name="_"/>
           <expr>
-            <send selector="length">
+            <send selector="print">
               <expr>
-                <var name="s4"/>
+                <var name="nl"/>
               </expr>
             </send>
           </expr>
@@ -139,7 +199,11 @@
               <expr>
                 <send selector="asString">
                   <expr>
-                    <var name="len"/>
+                    <send selector="isBoolean">
+                      <expr>
+                        <var name="n1"/>
+                      </expr>
+                    </send>
                   </expr>
                 </send>
               </expr>
@@ -161,7 +225,15 @@
           <expr>
             <send selector="print">
               <expr>
-                <literal class="String" value="--- startsWith:endsBefore: ---"/>
+                <send selector="asString">
+                  <expr>
+                    <send selector="isNumber">
+                      <expr>
+                        <var name="n1"/>
+                      </expr>
+                    </send>
+                  </expr>
+                </send>
               </expr>
             </send>
           </expr>
@@ -177,42 +249,37 @@
           </expr>
         </assign>
         <assign order="19">
-          <var name="sub"/>
+          <var name="s1"/>
           <expr>
-            <send selector="startsWith:endsBefore:">
+            <send selector="new">
               <expr>
-                <var name="s4"/>
+                <literal class="class" value="MyNil"/>
               </expr>
-              <arg order="1">
-                <expr>
-                  <literal class="Integer" value="1"/>
-                </expr>
-              </arg>
-              <arg order="2">
-                <expr>
-                  <literal class="Integer" value="5"/>
-                </expr>
-              </arg>
             </send>
           </expr>
         </assign>
         <assign order="20">
-          <var name="_"/>
+          <var name="s2"/>
           <expr>
-            <send selector="print">
+            <send selector="new">
               <expr>
-                <var name="sub"/>
+                <literal class="class" value="MyNil"/>
               </expr>
             </send>
           </expr>
         </assign>
         <assign order="21">
-          <var name="_"/>
+          <var name="s3"/>
           <expr>
-            <send selector="print">
+            <send selector="from:">
               <expr>
-                <var name="nl"/>
+                <literal class="class" value="MyNil"/>
               </expr>
+              <arg order="1">
+                <expr>
+                  <literal class="Nil" value="nil"/>
+                </expr>
+              </arg>
             </send>
           </expr>
         </assign>
@@ -221,7 +288,20 @@
           <expr>
             <send selector="print">
               <expr>
-                <literal class="String" value="--- asInteger ---"/>
+                <send selector="asString">
+                  <expr>
+                    <send selector="identicalTo:">
+                      <expr>
+                        <var name="s1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="s2"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
               </expr>
             </send>
           </expr>
@@ -237,27 +317,35 @@
           </expr>
         </assign>
         <assign order="24">
-          <var name="num"/>
+          <var name="_"/>
           <expr>
-            <send selector="asInteger">
+            <send selector="print">
               <expr>
-                <var name="s3"/>
+                <send selector="asString">
+                  <expr>
+                    <send selector="identicalTo:">
+                      <expr>
+                        <var name="s1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="s3"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
               </expr>
             </send>
           </expr>
         </assign>
         <assign order="25">
-          <var name="res"/>
+          <var name="_"/>
           <expr>
-            <send selector="plus:">
+            <send selector="print">
               <expr>
-                <var name="num"/>
+                <var name="nl"/>
               </expr>
-              <arg order="1">
-                <expr>
-                  <literal class="Integer" value="1"/>
-                </expr>
-              </arg>
             </send>
           </expr>
         </assign>
@@ -268,7 +356,11 @@
               <expr>
                 <send selector="asString">
                   <expr>
-                    <var name="res"/>
+                    <send selector="isNil">
+                      <expr>
+                        <var name="s1"/>
+                      </expr>
+                    </send>
                   </expr>
                 </send>
               </expr>
@@ -290,7 +382,20 @@
           <expr>
             <send selector="print">
               <expr>
-                <literal class="String" value="--- equalTo: ---"/>
+                <send selector="asString">
+                  <expr>
+                    <send selector="equalTo:">
+                      <expr>
+                        <var name="s1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="s1"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
               </expr>
             </send>
           </expr>
@@ -306,178 +411,29 @@
           </expr>
         </assign>
         <assign order="30">
-          <var name="isEq1"/>
+          <var name="_"/>
           <expr>
-            <send selector="equalTo:">
+            <send selector="print">
               <expr>
-                <var name="s1"/>
+                <send selector="asString">
+                  <expr>
+                    <send selector="equalTo:">
+                      <expr>
+                        <var name="s1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="s2"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
               </expr>
-              <arg order="1">
-                <expr>
-                  <literal class="String" value="Hello"/>
-                </expr>
-              </arg>
             </send>
           </expr>
         </assign>
         <assign order="31">
-          <var name="isEq2"/>
-          <expr>
-            <send selector="equalTo:">
-              <expr>
-                <var name="s1"/>
-              </expr>
-              <arg order="1">
-                <expr>
-                  <literal class="String" value="World"/>
-                </expr>
-              </arg>
-            </send>
-          </expr>
-        </assign>
-        <assign order="32">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <send selector="asString">
-                  <expr>
-                    <var name="isEq1"/>
-                  </expr>
-                </send>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="33">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <var name="nl"/>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="34">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <send selector="asString">
-                  <expr>
-                    <var name="isEq2"/>
-                  </expr>
-                </send>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="35">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <var name="nl"/>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="36">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <literal class="String" value="--- asString ---"/>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="37">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <var name="nl"/>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="38">
-          <var name="strCopy"/>
-          <expr>
-            <send selector="asString">
-              <expr>
-                <var name="s1"/>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="39">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <var name="strCopy"/>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="40">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <var name="nl"/>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="41">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <literal class="String" value="--- isString ---"/>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="42">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <var name="nl"/>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="43">
-          <var name="isStr"/>
-          <expr>
-            <send selector="isString">
-              <expr>
-                <var name="s1"/>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="44">
-          <var name="_"/>
-          <expr>
-            <send selector="print">
-              <expr>
-                <send selector="asString">
-                  <expr>
-                    <var name="isStr"/>
-                  </expr>
-                </send>
-              </expr>
-            </send>
-          </expr>
-        </assign>
-        <assign order="45">
           <var name="_"/>
           <expr>
             <send selector="print">

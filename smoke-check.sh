@@ -15,7 +15,7 @@ docker build --target runtime --tag "${RUNTIME_TAG}" "${ROOT_DIR}"
 
 echo "[smoke] Runtime smoke run on sample XML"
 docker run --rm \
-  -v "${ROOT_DIR}/tester/sol2xml/xml:/opt/xml:ro" \
+  -v "${ROOT_DIR}/test/xml:/opt/xml:ro" \
   "${RUNTIME_TAG}" \
   --source /opt/xml/example.xml
 
@@ -24,14 +24,14 @@ docker build --target test --tag "${TEST_TAG}" "${ROOT_DIR}"
 
 echo "[smoke] Test-tool smoke run (format aligned with assignment example)"
 docker run --rm \
-  -v "${ROOT_DIR}/tester/tests:/opt/tests" \
+  -v "${ROOT_DIR}/test/tests:/opt/tests" \
   "${TEST_TAG}" \
   -r -o /opt/tests/report.smoke.json -ic BASIC -et aaa -et bbb /opt/tests
 
-if [[ ! -f "${ROOT_DIR}/tester/tests/report.smoke.json" ]]; then
+if [[ ! -f "${ROOT_DIR}/test/tests/report.smoke.json" ]]; then
   echo "[smoke] ERROR: report.smoke.json was not created" >&2
   exit 1
 fi
 
 echo "[smoke] OK"
-echo "[smoke] Report: ${ROOT_DIR}/tester/tests/report.smoke.json"
+echo "[smoke] Report: ${ROOT_DIR}/test/tests/report.smoke.json"

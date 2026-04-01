@@ -20,7 +20,7 @@ export class SolInteger extends SolObject {
           if (args[0] instanceof SolInteger) {
             return new SolInteger((recv as SolInteger).value + args[0].value);
           }
-          throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+          throw new InterpreterError(ErrorCode.INT_OTHER, "Operand must be an Integer");
         },
       ],
       [
@@ -29,7 +29,7 @@ export class SolInteger extends SolObject {
           if (args[0] instanceof SolInteger) {
             return new SolInteger((recv as SolInteger).value - args[0].value);
           }
-          throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+          throw new InterpreterError(ErrorCode.INT_OTHER, "Operand must be an Integer");
         },
       ],
       [
@@ -38,14 +38,14 @@ export class SolInteger extends SolObject {
           if (args[0] instanceof SolInteger) {
             return new SolInteger((recv as SolInteger).value * args[0].value);
           }
-          throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+          throw new InterpreterError(ErrorCode.INT_OTHER, "Operand must be an Integer");
         },
       ],
       [
         "divBy:",
         (recv, args) => {
           if (!(args[0] instanceof SolInteger)) {
-            throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+            throw new InterpreterError(ErrorCode.INT_OTHER, "Operand must be an Integer");
           }
           const b = args[0].value;
           if (b === 0) throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Division by zero");
@@ -56,7 +56,7 @@ export class SolInteger extends SolObject {
         "greaterThan:",
         (recv, args, interpreter) => {
           if (!(args[0] instanceof SolInteger)) {
-            throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+            throw new InterpreterError(ErrorCode.INT_OTHER, "Operand must be an Integer");
           }
           return (recv as SolInteger).value > args[0].value
             ? interpreter.getTrue()
@@ -67,7 +67,7 @@ export class SolInteger extends SolObject {
         "equalTo:",
         (recv, args, interpreter) => {
           if (!(args[0] instanceof SolInteger)) {
-            throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+            throw new InterpreterError(ErrorCode.INT_OTHER, "Operand must be an Integer");
           }
           return args[0].value === (recv as SolInteger).value
             ? interpreter.getTrue()

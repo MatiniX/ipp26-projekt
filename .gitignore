@@ -13,4 +13,4 @@ package-lock.json
 out_file.xml
 .github
 
-/tester/tests/*.json
+/test/tests/*.json
