@@ -16,37 +16,63 @@ export class SolInteger extends SolObject {
     return new Map<string, BuiltinMethod>([
       [
         "plus:",
-        (recv, args) => new SolInteger((recv as SolInteger).value + (args[0] as SolInteger).value),
+        (recv, args) => {
+          if (args[0] instanceof SolInteger) {
+            return new SolInteger((recv as SolInteger).value + args[0].value);
+          }
+          throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+        },
       ],
       [
         "minus:",
-        (recv, args) => new SolInteger((recv as SolInteger).value - (args[0] as SolInteger).value),
+        (recv, args) => {
+          if (args[0] instanceof SolInteger) {
+            return new SolInteger((recv as SolInteger).value - args[0].value);
+          }
+          throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+        },
       ],
       [
         "multiplyBy:",
-        (recv, args) => new SolInteger((recv as SolInteger).value * (args[0] as SolInteger).value),
+        (recv, args) => {
+          if (args[0] instanceof SolInteger) {
+            return new SolInteger((recv as SolInteger).value * args[0].value);
+          }
+          throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+        },
       ],
       [
         "divBy:",
         (recv, args) => {
-          const b = (args[0] as SolInteger).value;
+          if (!(args[0] instanceof SolInteger)) {
+            throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+          }
+          const b = args[0].value;
           if (b === 0) throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Division by zero");
           return new SolInteger(Math.trunc((recv as SolInteger).value / b));
         },
       ],
       [
         "greaterThan:",
-        (recv, args, interpreter) =>
-          (recv as SolInteger).value > (args[0] as SolInteger).value
+        (recv, args, interpreter) => {
+          if (!(args[0] instanceof SolInteger)) {
+            throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+          }
+          return (recv as SolInteger).value > args[0].value
             ? interpreter.getTrue()
-            : interpreter.getFalse(),
+            : interpreter.getFalse();
+        },
       ],
       [
         "equalTo:",
-        (recv, args, interpreter) =>
-          args[0] instanceof SolInteger && (recv as SolInteger).value === args[0].value
+        (recv, args, interpreter) => {
+          if (!(args[0] instanceof SolInteger)) {
+            throw new InterpreterError(ErrorCode.INT_INVALID_ARG, "Operand must be an Integer");
+          }
+          return args[0].value === (recv as SolInteger).value
             ? interpreter.getTrue()
-            : interpreter.getFalse(),
+            : interpreter.getFalse();
+        },
       ],
       [
         "asString",

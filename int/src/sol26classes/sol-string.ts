@@ -2,6 +2,8 @@ import { Readable } from "node:stream";
 import { SolInteger } from "./sol-integer.js";
 import { SolObject } from "./sol-object.js";
 import { BuiltinMethod } from "../interpreter/types.js";
+import { InterpreterError } from "../interpreter/exceptions.js";
+import { ErrorCode } from "../interpreter/error_codes.js";
 
 export class SolString extends SolObject {
   private static inputStream: Readable | null = null;
@@ -93,16 +95,19 @@ export class SolString extends SolObject {
       [
         "startsWith:endsBefore:",
         (recv, args, interpreter) => {
-          const startIndex = (args[0] as SolInteger).value - 1;
-          const endIndex = (args[1] as SolInteger).value - 1;
-          if (startIndex < 0 || endIndex < 0) {
-            return interpreter.getNil();
-          }
-          if (endIndex - startIndex < 0) {
-            return new SolString("");
-          }
+          if (args[0] instanceof SolInteger && args[1] instanceof SolInteger) {
+            const startIndex = args[0].value - 1;
+            const endIndex = args[1].value - 1;
+            if (startIndex < 0 || endIndex < 0) {
+              return interpreter.getNil();
+            }
+            if (endIndex - startIndex < 0) {
+              return new SolString("");
+            }
 
-          return new SolString((recv as SolString).value.substring(startIndex, endIndex));
+            return new SolString((recv as SolString).value.substring(startIndex, endIndex));
+          }
+          throw new InterpreterError(ErrorCode.INT_OTHER, "Arguments must be Integers");
         },
       ],
       ["length", (recv) => new SolInteger((recv as SolString).value.length)],

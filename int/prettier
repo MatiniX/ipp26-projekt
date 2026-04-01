@@ -1,4 +1,6 @@
 #!/bin/bash
-# Wrapper skript pre Prettier - pouziva pre-instalovane node_modules z /opt/int
+# Wrapper skript pre Prettier - deleguje na npm script format z package.json
 export NODE_PATH=/opt/int/node_modules
-exec /opt/int/node_modules/.bin/prettier "$@"
+export PATH=/opt/int/node_modules/.bin:$PATH
+
+exec npm run format -- "$@"

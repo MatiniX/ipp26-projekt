@@ -1,3 +1,24 @@
 #!/bin/bash
 # Wrapper skript pre Ruff
+
+# Ak nie je zadana cesta, kontroluj len zdrojaky testera.
+if [[ $# -eq 0 ]]; then
+	exec ruff check src
+fi
+
+if [[ "$1" == "check" || "$1" == "format" ]]; then
+	has_target=false
+
+	for arg in "${@:2}"; do
+		if [[ "$arg" != -* ]]; then
+			has_target=true
+			break
+		fi
+	done
+
+	if [[ "$has_target" == "false" ]]; then
+		exec ruff "$1" "${@:2}" src
+	fi
+fi
+
 exec ruff "$@"

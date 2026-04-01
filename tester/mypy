@@ -1,3 +1,32 @@
 #!/bin/bash
 # Wrapper skript pre Mypy
+
+if [[ $# -eq 0 ]]; then
+	exec mypy src
+fi
+
+target_count=0
+single_target=""
+
+for arg in "$@"; do
+	if [[ "$arg" != -* ]]; then
+		target_count=$((target_count + 1))
+		single_target="$arg"
+	fi
+done
+
+if [[ $target_count -eq 0 ]]; then
+	exec mypy "$@" src
+fi
+
+if [[ $target_count -eq 1 && "$single_target" == "." ]]; then
+	filtered_args=()
+	for arg in "$@"; do
+		if [[ "$arg" != "." ]]; then
+			filtered_args+=("$arg")
+		fi
+	done
+	exec mypy "${filtered_args[@]}" src
+fi
+
 exec mypy "$@"

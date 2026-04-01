@@ -1,4 +1,6 @@
 #!/bin/bash
-# Wrapper skript pre ESLint - pouziva pre-instalovane node_modules z /opt/int
+# Wrapper skript pre ESLint - deleguje na npm script lint z package.json
 export NODE_PATH=/opt/int/node_modules
-exec /opt/int/node_modules/.bin/eslint "$@"
+export PATH=/opt/int/node_modules/.bin:$PATH
+
+exec npm run lint -- "$@"
