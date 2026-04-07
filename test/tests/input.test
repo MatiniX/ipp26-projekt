@@ -1,0 +1,14 @@
++++ BASIC
+*** Test predavania vstupu programu
+!C! 0
+!I! 0
+>>> 2
+
+class Main : Object {
+run [ |
+    first := String read.
+    second := String read.
+    _ := first print.
+    _ := second print.
+]
+}

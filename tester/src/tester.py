@@ -304,15 +304,14 @@ def _execute_combined_test(
         temp_xml.write(xml_output)
         temp_xml.flush()  # Nutený zápis na disk pred tým, ako si ho prečíta iný proces
 
-        # Parametre pre interpreter (predpoklad --source) - môžete upraviť podľa dizajnu
+        # Parametre pre interpreter (predpoklad --source)
         int_cmd = [*interpreter_cmd, "--source", temp_xml.name]
 
-        # Ak test obsahuje programový vstup (.in)
+        # Ak test obsahuje programový vstup (.in), odovzdaj ho cez --input.
         if test_case.stdin_file:
-            with Path.open(test_case.stdin_file) as f_in:
-                int_proc = subprocess.run(int_cmd, stdin=f_in, text=True, capture_output=True)  # noqa: S603
-        else:
-            int_proc = subprocess.run(int_cmd, text=True, capture_output=True)  # noqa: S603
+            int_cmd.extend(["--input", str(test_case.stdin_file)])
+
+        int_proc = subprocess.run(int_cmd, text=True, capture_output=True)  # noqa: S603
 
     if int_proc.returncode not in (test_case.expected_interpreter_exit_codes or []):
         report = TestCaseReport(
@@ -409,10 +408,9 @@ def _execute_execute_only_test(
         int_cmd = [*interpreter_cmd, "--source", temp_xml.name]
 
         if test_case.stdin_file:
-            with Path.open(test_case.stdin_file) as f_in:
-                int_proc = subprocess.run(int_cmd, stdin=f_in, text=True, capture_output=True)  # noqa: S603
-        else:
-            int_proc = subprocess.run(int_cmd, text=True, capture_output=True)  # noqa: S603
+            int_cmd.extend(["--input", str(test_case.stdin_file)])
+
+        int_proc = subprocess.run(int_cmd, text=True, capture_output=True)  # noqa: S603
 
     if int_proc.returncode not in (test_case.expected_interpreter_exit_codes or []):
         report = TestCaseReport(

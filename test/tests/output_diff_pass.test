@@ -1,0 +1,11 @@
++++ BASIC
+*** Test kontroly zhody vystupu - pass
+!C! 0
+!I! 0
+>>> 2
+
+class Main : Object {
+run [ |
+    _ := 'OK' print.
+]
+}
