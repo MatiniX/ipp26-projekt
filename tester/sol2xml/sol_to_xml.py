@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# ruff: noqa
+# mypy: ignore-errors
 import os
 import sys
 import re

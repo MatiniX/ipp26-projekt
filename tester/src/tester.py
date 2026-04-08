@@ -183,7 +183,11 @@ def determine_test_type_and_codes(
     parser_codes: list[int], interpreter_codes: list[int], file_path: Path
 ) -> tuple[TestCaseType, list[int] | None, list[int] | None] | None:
     """
-    Helper function to determine the test case type and expected exit codes based on the presence of parser and interpreter codes in the test file. It also performs validation to ensure that combined test cases do not have unexpected parser codes. If a test case is invalid due to these constraints, it logs a warning and returns None to indicate that the test should be ignored.
+    Helper function to determine the test case type and expected exit codes based on the presence
+    of parser and interpreter codes in the test file. It also performs validation to ensure that
+    combined test cases do not have unexpected parser codes.
+    If a test case is invalid due to these constraints,
+    it logs a warning and returns None to indicate that the test should be ignored.
     """
     if parser_codes and not interpreter_codes:
         t_type = TestCaseType.PARSE_ONLY
@@ -266,7 +270,12 @@ def load_tests_from_directory(directory: Path, recursive: bool) -> list[TestCase
 
 
 def get_source_code(file_path: Path) -> str:
-    """Helper function to read the source code from the test file, skipping the metadata lines at the beginning. It looks for the first empty line and returns everything after it as the source code. If there is no empty line, it returns an empty string, indicating that there is no source code to execute."""
+    """Helper function to read the source code from the test file, skipping the metadata lines
+    at the beginning.
+    It looks for the first empty line and returns everything after it as the source code.
+    If there is no empty line, it returns an empty string, indicating that there is no source code
+    to execute.
+    """
     content = file_path.read_text(encoding="utf-8")
     lines = content.splitlines()
     for i, line in enumerate(lines):
@@ -283,7 +292,7 @@ def execute_combined_test(
 ) -> None:
     source_code = get_source_code(test_case.test_source_path)
 
-    # Run parser and test its exit code against expected codes. 
+    # Run parser and test its exit code against expected codes.
     # If it doesn't match, we can report the failure immediately without running the interpreter.
     parser_proc = subprocess.run(parser_cmd, input=source_code, text=True, capture_output=True)  # noqa: S603
 
@@ -299,15 +308,15 @@ def execute_combined_test(
 
     xml_output = parser_proc.stdout
 
-    # Crreate a temporary file for the parser output and run the interpreter with that file as input.
+    # Create a temporary file for the parser output and run the interpreter with that file as input
     with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=True) as temp_xml:
         temp_xml.write(xml_output)
         temp_xml.flush()  # Write the content to disk to ensure the interpreter can read it.
 
-        # Setup the interpreter command with the --source argument pointing to the temporary XML file.
+        # Setup the interpreter command with the --source argument pointing to the temporary file.
         int_cmd = [*interpreter_cmd, "--source", temp_xml.name]
 
-        # If the test case specifies an input file, we need to pass it to the interpreter using the --input argument.
+        # If the test case specifies an input file, pass it to the interpreter.
         if test_case.stdin_file:
             int_cmd.extend(["--input", str(test_case.stdin_file)])
 
@@ -327,7 +336,8 @@ def execute_combined_test(
         category_report.test_results[test_case.name] = report
         return
 
-    # If the interpreter exit code is correct and we have an expected stdout file then we need to compare the actual output with the expected output using GNU diff.
+    # If the interpreter exit code is correct and we have an expected stdout file
+    # then we need to compare the actual output with the expected output using GNU diff.
     if int_proc.returncode == 0 and test_case.expected_stdout_file:
         # Save interpreter output to a temporary file.
         with tempfile.NamedTemporaryFile(mode="w", delete=True) as temp_out:
@@ -372,7 +382,7 @@ def execute_parse_only_test(
     category_report: CategoryReport,
     parser_cmd: list[str],
 ) -> None:
-    # For parse-only tests, we only need to run the parser and check its exit code against the expected codes.
+    # For parse-only tests, the parser and check its exit code against the expected codes.
     source_code = get_source_code(test_case.test_source_path)
     parser_proc = subprocess.run(parser_cmd, input=source_code, text=True, capture_output=True)  # noqa: S603
 
@@ -405,14 +415,15 @@ def execute_execute_only_test(
     source_code = get_source_code(test_case.test_source_path)
     category_report.total_points += test_case.points
 
-    # Execute only the interpreter. We need to create a temporary file for the source code and pass it to the interpreter using the --source argument.
+    # Execute only the interpreter.
+    # We need to create a temporary file for the source code and pass it to the interpreter.
     with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=True) as temp_xml:
         temp_xml.write(source_code)
         temp_xml.flush()
 
         int_cmd = [*interpreter_cmd, "--source", temp_xml.name]
 
-        # If the test case specifies an input file, we need to pass it to the interpreter using the --input argument.
+        # If the test case specifies an input file, pass it to the interpreter.
         if test_case.stdin_file:
             int_cmd.extend(["--input", str(test_case.stdin_file)])
 
@@ -428,7 +439,8 @@ def execute_execute_only_test(
         category_report.test_results[test_case.name] = report
         return
 
-    # If the interpreter exit code is correct and we have an expected stdout file then we need to compare the actual output with the expected output using GNU diff.
+    # If the interpreter exit code is correct and we have an expected stdout file
+    # then we need to compare the actual output with the expected output using GNU diff.
     if int_proc.returncode == 0 and test_case.expected_stdout_file:
         with tempfile.NamedTemporaryFile(mode="w", delete=True) as temp_out:
             temp_out.write(int_proc.stdout)
@@ -460,7 +472,11 @@ def execute_execute_only_test(
 
 
 def flatten_args(arg_list: list[str] | list[list[str]] | None) -> list[str]:
-    """Helper function to flatten the include/exclude arguments which can be provided in multiple forms (e.g., multiple uses of the same flag with single or multiple values). It takes care of flattening the nested lists and filtering out any non-string values, returning a simple list of strings that can be used for filtering the test cases."""
+    """Helper function to flatten the include/exclude arguments which can be provided in
+    multiple forms (e.g., multiple uses of the same flag with single or multiple values).
+    It takes care of flattening the nested lists and filtering out any non-string values,
+    returning a simple list of strings that can be used for filtering the test cases.
+    """
     if not arg_list:
         return []
 
@@ -472,7 +488,11 @@ def flatten_args(arg_list: list[str] | list[list[str]] | None) -> list[str]:
 
 
 def matches_filter(value: str, patterns: list[str], is_regex: bool) -> bool:
-    """Helper function to check if a given value matches any of the provided patterns, interpreting them as regular expressions if the is_regex flag is set. It iterates through the patterns and checks for a match against the value, returning True if any pattern matches and False otherwise."""
+    """Helper function to check if a given value matches any of the provided patterns,
+    interpreting them as regular expressions if the is_regex flag is set.
+    It iterates through the patterns and checks for a match against the value,
+    returning True if any pattern matches and False otherwise.
+    """
     for p in patterns:
         if is_regex:
             if re.search(p, value):

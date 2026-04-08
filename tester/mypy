@@ -1,6 +1,7 @@
 #!/bin/bash
 # Wrapper skript pre Mypy
 
+# Ak nie sú žiadne argumenty, spustí Mypy len na src adresár
 if [[ $# -eq 0 ]]; then
 	exec mypy src
 fi
