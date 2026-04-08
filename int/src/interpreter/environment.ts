@@ -7,7 +7,6 @@ export class Environment {
 
   constructor(private parent: Environment | null = null) {}
 
-  /** Define a formal parameter (immutable — assignment to it is error 34). */
   defineParameter(name: string, value: SolObject): void {
     this.params.add(name);
     this.variables.set(name, value);

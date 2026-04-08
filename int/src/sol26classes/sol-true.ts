@@ -1,6 +1,9 @@
 import { BuiltinMethod } from "../interpreter/types.js";
 import { SolObject } from "./sol-object.js";
 
+/**
+ * Runtime representation of the singleton True object. Implements the True class in SOL26.
+ */
 export class SolTrue extends SolObject {
   private static _instance: SolTrue | null;
 

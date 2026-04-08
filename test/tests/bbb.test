@@ -1,0 +1,11 @@
++++ BASIC
+*** Exclude test bbb
+!C! 0
+!I! 0
+>>> 1
+
+class Main : Object {
+run [ |
+    _ := 'BBB' print.
+]
+}

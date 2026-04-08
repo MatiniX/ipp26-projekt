@@ -1,6 +1,9 @@
 import { BuiltinMethod } from "../interpreter/types.js";
 import { SolObject } from "./sol-object.js";
 
+/**
+ * Runtime representation of the singleton False object. Implements the False class in SOL26.
+ */
 export class SolFalse extends SolObject {
   private static _instance: SolFalse | null;
 

@@ -1,9 +1,14 @@
 import { BuiltinMethod } from "../interpreter/types.js";
 
+/** Base class for all Sol objects. */
 export class SolObject {
   public solClassName: string = "Object";
   public instanceAttributes = new Map<string, SolObject>();
 
+  /**
+   * Get the built-in methods for this class. Subclasses should override this to provide their own built-in methods.
+   * @returns Map of method names to their implementations.
+   */
   public static getbuiltinMethods(): Map<string, BuiltinMethod> {
     return new Map<string, BuiltinMethod>([
       [

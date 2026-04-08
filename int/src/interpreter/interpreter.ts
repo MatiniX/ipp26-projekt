@@ -17,6 +17,7 @@ import {
   InvalidXmlError,
   ModelValidationError,
   parseProgramXml,
+  Send,
   type Block,
   type Expr,
   type Literal,
@@ -45,16 +46,12 @@ import {
 import { AssignExpression, Expression, ExpressionVisitor, SolExpresion } from "./expression.js";
 
 const logger = getLogger("interpreter");
-
-// ── Interpreter ────────────────────────────────────────────────────────────
-
 export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<SolObject> {
   public currentProgram: Program | null = null;
   private classRegistry = new Map<string, RuntimeClass>();
+  private builtinClassNames: string[] = [];
   private currentParsingClass: { name: string; userMethods: Map<string, Block> } | null = null;
   private contextStack: ExecutionContext[] = [];
-
-  // ── Loading ──────────────────────────────────────────────────────────────
 
   public loadProgram(sourceFilePath: string): void {
     logger.info("Opening source file:", sourceFilePath);
@@ -72,16 +69,20 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     }
   }
 
-  // ── Execution entry point ────────────────────────────────────────────────
-
+  /**
+   * Main entry point for executing the loaded program.
+   * @param inputIo User input stream (for String read).
+   */
   public execute(inputIo: Readable): void {
     logger.info("Executing program");
+
     SolString.setInputStream(inputIo);
 
     if (!this.currentProgram) {
       throw new InterpreterError(ErrorCode.GENERAL_INPUT, "No program loaded");
     }
 
+    //Double-pass class registration: first register class names and methods to allow for mutual recursion, then check parent existence and Main/run.
     this.registerBuiltinClasses();
     for (const cls of this.currentProgram.classes) {
       this.visitClassDef(new ClassDefStatement(cls.name, cls.parent, cls.methods));
@@ -97,6 +98,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       throw new InterpreterError(ErrorCode.SEM_MAIN, "Missing Main class or its run method");
     }
 
+    //Execute the program by sending 'run' to an instance of Main.
     this.executeStatement(new SendStatement("Main", "run", []));
   }
 
@@ -150,13 +152,13 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     for (const assign of stmt.assigns) {
       const assignExpr = new AssignExpression(assign.target, assign.expr);
       const value = this.evaluateExpression(assignExpr);
+      //Keep track of the last evaluated expression in the block
       this.currentContext.lastBlockResult = value;
     }
   }
 
   visitClassDef(stmt: ClassDefStatement): void {
-    const builtinNames = ["Object", "Integer", "String", "Nil", "True", "False", "Block"];
-    if (builtinNames.includes(stmt.name)) {
+    if (this.builtinClassNames.includes(stmt.name)) {
       throw new InterpreterError(
         ErrorCode.SEM_ERROR,
         `Cannot redefine built-in class: ${stmt.name}`
@@ -233,6 +235,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       userMethods: new Map(),
       builtinMethods: SolObject.getbuiltinMethods(),
     });
+    this.builtinClassNames.push("Object");
 
     this.classRegistry.set("Integer", {
       name: "Integer",
@@ -240,6 +243,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       userMethods: new Map(),
       builtinMethods: SolInteger.getBuiltinMethods(),
     });
+    this.builtinClassNames.push("Integer");
 
     this.classRegistry.set("String", {
       name: "String",
@@ -247,6 +251,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       userMethods: new Map(),
       builtinMethods: SolString.getBuiltinMethods(),
     });
+    this.builtinClassNames.push("String");
 
     this.classRegistry.set("Nil", {
       name: "Nil",
@@ -254,6 +259,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       userMethods: new Map(),
       builtinMethods: SolNil.getBuiltinMethods(),
     });
+    this.builtinClassNames.push("Nil");
 
     this.classRegistry.set("True", {
       name: "True",
@@ -261,6 +267,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       userMethods: new Map(),
       builtinMethods: SolTrue.getBuiltinMethods(),
     });
+    this.builtinClassNames.push("True");
 
     this.classRegistry.set("False", {
       name: "False",
@@ -268,6 +275,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       userMethods: new Map(),
       builtinMethods: SolFalse.getBuiltinMethods(),
     });
+    this.builtinClassNames.push("False");
 
     this.classRegistry.set("Block", {
       name: "Block",
@@ -275,14 +283,24 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       userMethods: new Map(),
       builtinMethods: SolBlock.getBuiltinMethods(),
     });
+    this.builtinClassNames.push("Block");
   }
 
+  /**
+   * Determines the arity of a method selector based on the number of colons it contains.
+   * @param selector Selector string of the method (e.g., "value:value:").
+   * @returns The arity of the selector string.
+   */
   private selectorArity(selector: string): number {
     return (selector.match(/:/g) ?? []).length;
   }
 
-  // ── Method lookup ────────────────────────────────────────────────────────
-
+  /**
+   * Looks up a method in the class hierarchy.
+   * @param className Name of the class to start lookup from.
+   * @param selector Selector of the method to look up.
+   * @returns Information about the found method, or null if not found.
+   */
   private lookupMethod(className: string, selector: string): MethodLookupResult {
     let current: string | null = className;
     while (current !== null) {
@@ -300,8 +318,14 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     return null;
   }
 
-  // ── Message dispatch ─────────────────────────────────────────────────────
-
+  /**
+   * Sends a message to the appropriate method or attribute of the receiver.
+   * @param receiver The object receiving the message.
+   * @param selector The method or attribute name.
+   * @param args The arguments for the method call.
+   * @param superFromClass The class from which to start the lookup.
+   * @returns The result of the method call or attribute access.
+   */
   public sendMessage(
     receiver: SolObject,
     selector: string,
@@ -348,6 +372,13 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     );
   }
 
+  /**
+   * Tries to read an instance attribute from the receiver.
+   * @param receiver The object from which to read the attribute.
+   * @param selector The attribute name.
+   * @param args The arguments for the operation. Should be empty for attribute read.
+   * @returns The value of the attribute, or null if not found.
+   */
   private tryReadInstanceAttribute(
     receiver: SolObject,
     selector: string,
@@ -360,6 +391,14 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     return null;
   }
 
+  /**
+   * Tries to write an instance attribute to the receiver.
+   * @param receiver The object to which to write the attribute.
+   * @param selector The attribute name.
+   * @param args The arguments for the operation. Should contain exactly one element for attribute write.
+   * @param superFromClass The class from which to start the lookup.
+   * @returns The receiver, or null if the operation failed.
+   */
   private tryWriteInstanceAttribute(
     receiver: SolObject,
     selector: string,
@@ -386,8 +425,14 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     return null;
   }
 
-  // ── Block / method execution ─────────────────────────────────────────────
-
+  /**
+   * Executes a user-defined method.
+   * @param receiver The object on which the method is called.
+   * @param block The method block to execute.
+   * @param args The arguments for the method call.
+   * @param definingClass Name of the class where the method is defined.
+   * @returns The result of the method execution.
+   */
   private executeUserMethod(
     receiver: SolObject,
     block: Block,
@@ -402,6 +447,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       env.defineParameter(name, args[i] as SolObject);
     }
 
+    //Setup execution context for the method call, with selfRef pointing to the receiver and definingClassName for super sends.
     this.contextStack.push({
       env: env,
       selfRef: receiver,
@@ -413,13 +459,20 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       const blockStmt = new BlockStatement(block.arity, block.parameters, block.assigns);
       this.executeStatement(blockStmt);
 
+      //Method result is the value of the last expression in the block, or nil if block is empty.
       return this.currentContext?.lastBlockResult || SolNil.instance;
     } finally {
-      // Po dobehnutí metódy vyhoď kontext zo stacku
+      //Pop the execution context to restore the caller's environment and selfRef after method execution completes.
       this.contextStack.pop();
     }
   }
 
+  /**
+   * Invokes a block with the given arguments.
+   * @param block The block to invoke.
+   * @param args The arguments for the block call.
+   * @returns The result of the block execution.
+   */
   public invokeBlock(block: SolBlock, args: SolObject[]): SolObject {
     const env = new Environment(block.closureEnv);
 
@@ -450,8 +503,14 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     }
   }
 
-  // ── Expression evaluation ────────────────────────────────────────────────
-
+  /**
+   * Evaluates an expression in the given environment.
+   * @param expr The expression to evaluate.
+   * @param env The environment in which to evaluate the expression.
+   * @param selfRef The self reference for the evaluation context.
+   * @param definingClassName The class name where the evaluation is defined.
+   * @returns The result of the expression evaluation.
+   */
   private evaluateExpr(
     expr: Expr,
     env: Environment,
@@ -465,6 +524,11 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     throw new InterpreterError(ErrorCode.GENERAL_OTHER, "Invalid expression node");
   }
 
+  /**
+   * Evaluates a literal expression and returns the corresponding SolObject instance.
+   * @param literal The literal expression to evaluate.
+   * @returns The corresponding SolObject instance.
+   */
   private evaluateLiteral(literal: Literal): SolObject {
     switch (literal.class_id) {
       case "Integer":
@@ -492,6 +556,13 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     }
   }
 
+  /**
+   * Evaluates a variable expression and returns the corresponding SolObject instance.
+   * @param varNode The variable expression to evaluate.
+   * @param env The environment in which to evaluate the expression.
+   * @param selfRef The self reference for the evaluation context.
+   * @returns The corresponding SolObject instance.
+   */
   private evaluateVar(varNode: Var, env: Environment, selfRef: SolObject | null): SolObject {
     switch (varNode.name) {
       case "self":
@@ -515,6 +586,14 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     }
   }
 
+  /**
+   * Evaluates a block literal expression and returns the corresponding SolBlock instance.
+   * @param block The block literal expression to evaluate.
+   * @param env The environment in which to evaluate the expression.
+   * @param selfRef The self reference for the evaluation context.
+   * @param definingClassName The class name where the evaluation is defined.
+   * @returns The corresponding SolBlock instance.
+   */
   private evaluateBlockLiteral(
     block: Block,
     env: Environment,
@@ -524,13 +603,21 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     return new SolBlock(block, env, selfRef, definingClassName);
   }
 
+  /**
+   * Evaluates a send statement and returns the corresponding SolObject instance.
+   * @param send The send statement to evaluate.
+   * @param env The environment in which to evaluate the statement.
+   * @param selfRef The self reference for the evaluation context.
+   * @param definingClassName The class name where the evaluation is defined.
+   * @returns The corresponding SolObject instance.
+   */
   private evaluateSend(
-    send: import("./input_model.js").Send,
+    send: Send,
     env: Environment,
     selfRef: SolObject | null,
     definingClassName: string | null
   ): SolObject {
-    // ── Class messages: receiver is a class literal ──
+    //Class messages: receiver is a class literal (e.g., Integer new, String from:)
     if (send.receiver.literal?.class_id === "class") {
       const className = send.receiver.literal.value;
       const args = send.args.map((a) =>
@@ -539,10 +626,9 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       return this.handleClassMessage(className, send.selector, args);
     }
 
-    // ── Detect super send ──
     const isSuperSend = send.receiver.var?.name === "super";
 
-    // Evaluate receiver, then arguments left-to-right
+    //Evaluate receiver, then arguments left-to-right
     const receiver = this.evaluateExpr(send.receiver, env, selfRef, definingClassName);
     const args = send.args.map((a) => this.evaluateExpr(a.expr, env, selfRef, definingClassName));
 
@@ -550,8 +636,13 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     return this.sendMessage(receiver, send.selector, args, superFromClass);
   }
 
-  // ── Class messages (new, from:, read) ────────────────────────────────────
-
+  /**
+   * Handles class messages (new, from:, read)
+   * @param className The name of the class receiving the message.
+   * @param selector The message selector should be one of "new", "from:", or "read".
+   * @param args The arguments for the class message. Only "from:" takes one argument (the source object).
+   * @returns Instance of the class for "new" and "from:", or the result of reading for "read".
+   */
   private handleClassMessage(className: string, selector: string, args: SolObject[]): SolObject {
     if (!this.classRegistry.has(className)) {
       throw new InterpreterError(ErrorCode.SEM_UNDEF, `Undefined class: '${className}'`);
@@ -576,6 +667,11 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     }
   }
 
+  /**
+   * Creates an instance of the specified class.
+   * @param className The name of the class for which to create an instance.
+   * @returns The created instance.
+   */
   private createInstance(className: string): SolObject {
     // Singletons
     if (className === "Nil") return SolNil.instance;
@@ -606,6 +702,12 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     return new SolUserObject(className);
   }
 
+  /**
+   * Creates an instance of the specified class from a source object.
+   * @param className The name of the class for which to create an instance.
+   * @param source The source object from which to initialize the new instance.
+   * @returns The created instance.
+   */
   private createInstanceFrom(className: string, source: SolObject): SolObject {
     // Singletons
     if (className === "Nil") return SolNil.instance;
@@ -625,6 +727,12 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     return newObj;
   }
 
+  /**
+   * Validates the compatibility of the source object with the target class.
+   * @param className The name of the class for which to create an instance.
+   * @param targetBuiltin The builtin class to which the source object should be compatible.
+   * @param source The source object from which to initialize the new instance.
+   */
   private validateSourceCompatibility(
     className: string,
     targetBuiltin: string | null,
@@ -644,6 +752,13 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     }
   }
 
+  /**
+   * Creates a new object of the specified class by converting the source object if necessary.
+   * @param className The name of the class for which to create an instance.
+   * @param targetBuiltin The builtin class to which the source object should be compatible.
+   * @param source The source object from which to initialize the new instance.
+   * @returns The created instance.
+   */
   private createConvertedObject(
     className: string,
     targetBuiltin: string | null,
@@ -668,11 +783,15 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     return new SolUserObject(className);
   }
 
+  /**
+   * Try to find the nearest built-in ancestor of the given class in the class hierarchy.
+   * @param className The name of the class for which to find an ancestor.
+   * @returns The name of the nearest built-in ancestor, or null if none is found.
+   */
   private findBuiltinAncestor(className: string): string | null {
-    const builtins = new Set(["Object", "Integer", "String", "Nil", "True", "False", "Block"]);
     let current: string | null = className;
     while (current !== null) {
-      if (builtins.has(current)) return current;
+      if (this.builtinClassNames.includes(current)) return current;
       const cls = this.classRegistry.get(current);
       if (!cls) return null;
       current = cls.parentName;
@@ -680,22 +799,43 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     return null;
   }
 
+  /**
+   * Gets the singleton instance of the Nil class.
+   * @returns The singleton instance of the Nil class.
+   */
   public getNil(): SolObject {
     return SolNil.instance;
   }
+
+  /**
+   * Gets the singleton instance of the True class.
+   * @returns The singleton instance of the True class.
+   */
   public getTrue(): SolObject {
     return SolTrue.instance;
   }
+  /**
+   * Gets the singleton instance of the False class.
+   * @returns The singleton instance of the False class.
+   */
   public getFalse(): SolObject {
     return SolFalse.instance;
   }
+  /**
+   * Creates a new string object.
+   * @param val The value for the new string object.
+   * @returns The created string object.
+   */
   public createString(val: string): SolObject {
     return new SolString(val);
   }
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
+/**
+ * Selects the appropriate value property based on the number of arguments.
+ * @param arity The number of arguments.
+ * @returns The selected value property.
+ */
 function valueSelectorForArity(arity: number): string {
   if (arity === 0) return "value";
   return "value:".repeat(arity);

@@ -5,7 +5,7 @@ import { BuiltinMethod } from "../interpreter/types.js";
 
 /**
  * Runtime representation of a SOL26 block.
- * Captures the block's AST, lexical environment (closure), self reference,
+ * Captures the block's AST, environment (closure), self reference,
  * and the class in which the enclosing method is defined (for super dispatch).
  */
 export class SolBlock extends SolObject {

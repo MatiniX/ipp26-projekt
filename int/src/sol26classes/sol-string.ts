@@ -16,6 +16,10 @@ export class SolString extends SolObject {
     this.value = value;
   }
 
+  /**
+   * Initialize the input stream for SolString read operations. This should be called before executing the program, with the user input stream (e.g., process.stdin).
+   * @param stream User input stream to read from.
+   */
   static setInputStream(stream: Readable): void {
     SolString.inputStream = stream;
     SolString.buffer = "";
@@ -36,6 +40,7 @@ export class SolString extends SolObject {
       }
     }
 
+    //User input is expected to be split by newlines.
     const idx = SolString.buffer.indexOf("\n");
     if (idx === -1) {
       // No newline found — return whatever remains
@@ -44,6 +49,7 @@ export class SolString extends SolObject {
       return new SolString(line);
     }
     const line = SolString.buffer.substring(0, idx);
+    //Advance buffer past the consumed line and newline character
     SolString.buffer = SolString.buffer.substring(idx + 1);
     return new SolString(line);
   }
@@ -96,12 +102,13 @@ export class SolString extends SolObject {
         "startsWith:endsBefore:",
         (recv, args, interpreter) => {
           if (args[0] instanceof SolInteger && args[1] instanceof SolInteger) {
+            //SOL26 uses 1-based indexing for strings
             const startIndex = args[0].value - 1;
             const endIndex = args[1].value - 1;
             if (startIndex < 0 || endIndex < 0) {
               return interpreter.getNil();
             }
-            if (endIndex - startIndex < 0) {
+            if (endIndex - startIndex <= 0) {
               return new SolString("");
             }
 

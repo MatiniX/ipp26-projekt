@@ -3,6 +3,9 @@ import { InterpreterError } from "../interpreter/exceptions.js";
 import { BuiltinMethod } from "../interpreter/types.js";
 import { SolObject } from "./sol-object.js";
 
+/**
+ * Runtime representation of SOL26 Integer objects. Implements the Integer class in SOL26, including built-in methods for arithmetic operations, comparisons, and conversions.
+ */
 export class SolInteger extends SolObject {
   value: number;
 
@@ -83,6 +86,7 @@ export class SolInteger extends SolObject {
       [
         "timesRepeat:",
         (recv, args, interpreter) => {
+          // SOL26's timesRepeat: sends the message to the block argument, passing in the current iteration count (1-based) as an argument.
           const n = (recv as SolInteger).value;
           let result: SolObject = interpreter.getNil();
           for (let i = 1; i <= n; i++) {

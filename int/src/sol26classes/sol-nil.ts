@@ -1,6 +1,9 @@
 import { BuiltinMethod } from "../interpreter/types.js";
 import { SolObject } from "./sol-object.js";
 
+/**
+ * Runtime representation of the singleton Nil object. Implements the Nil class in SOL26.
+ */
 export class SolNil extends SolObject {
   private static _instance: SolNil | null;
 

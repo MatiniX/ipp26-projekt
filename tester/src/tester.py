@@ -179,12 +179,11 @@ def parse_arguments() -> CliArguments:
     return args
 
 
-def _determine_test_type_and_codes(
+def determine_test_type_and_codes(
     parser_codes: list[int], interpreter_codes: list[int], file_path: Path
 ) -> tuple[TestCaseType, list[int] | None, list[int] | None] | None:
     """
-    Pomocná funkcia na určenie typu testu a očakávaných návratových kódov.
-    Vráti (t_type, expected_parser, expected_interpreter) alebo None, ak test nespĺňa podmienky.
+    Helper function to determine the test case type and expected exit codes based on the presence of parser and interpreter codes in the test file. It also performs validation to ensure that combined test cases do not have unexpected parser codes. If a test case is invalid due to these constraints, it logs a warning and returns None to indicate that the test should be ignored.
     """
     if parser_codes and not interpreter_codes:
         t_type = TestCaseType.PARSE_ONLY
@@ -241,7 +240,7 @@ def load_tests_from_directory(directory: Path, recursive: bool) -> list[TestCase
                 elif line.startswith(">>>"):
                     points = int(line[3:].strip())
 
-            test_config = _determine_test_type_and_codes(
+            test_config = determine_test_type_and_codes(
                 parser_codes, interpreter_codes, file_path
             )
             if test_config is None:
@@ -267,7 +266,7 @@ def load_tests_from_directory(directory: Path, recursive: bool) -> list[TestCase
 
 
 def get_source_code(file_path: Path) -> str:
-    """Pomocná funkcia na extrakciu čistého kódu z .test súboru."""
+    """Helper function to read the source code from the test file, skipping the metadata lines at the beginning. It looks for the first empty line and returns everything after it as the source code. If there is no empty line, it returns an empty string, indicating that there is no source code to execute."""
     content = file_path.read_text(encoding="utf-8")
     lines = content.splitlines()
     for i, line in enumerate(lines):
@@ -276,7 +275,7 @@ def get_source_code(file_path: Path) -> str:
     return ""
 
 
-def _execute_combined_test(
+def execute_combined_test(
     test_case: TestCaseDefinition,
     category_report: CategoryReport,
     parser_cmd: list[str],
@@ -284,8 +283,8 @@ def _execute_combined_test(
 ) -> None:
     source_code = get_source_code(test_case.test_source_path)
 
-    # --- 1. KROK: SPÚŠŤANIE PARSERA ---
-    # Pošleme mu zdrojový kód cez stdin
+    # Run parser and test its exit code against expected codes. 
+    # If it doesn't match, we can report the failure immediately without running the interpreter.
     parser_proc = subprocess.run(parser_cmd, input=source_code, text=True, capture_output=True)  # noqa: S603
 
     category_report.total_points += test_case.points
@@ -300,17 +299,19 @@ def _execute_combined_test(
 
     xml_output = parser_proc.stdout
 
+    # Crreate a temporary file for the parser output and run the interpreter with that file as input.
     with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=True) as temp_xml:
         temp_xml.write(xml_output)
-        temp_xml.flush()  # Nutený zápis na disk pred tým, ako si ho prečíta iný proces
+        temp_xml.flush()  # Write the content to disk to ensure the interpreter can read it.
 
-        # Parametre pre interpreter (predpoklad --source)
+        # Setup the interpreter command with the --source argument pointing to the temporary XML file.
         int_cmd = [*interpreter_cmd, "--source", temp_xml.name]
 
-        # Ak test obsahuje programový vstup (.in), odovzdaj ho cez --input.
+        # If the test case specifies an input file, we need to pass it to the interpreter using the --input argument.
         if test_case.stdin_file:
             int_cmd.extend(["--input", str(test_case.stdin_file)])
 
+        # Run the interpreter and capture its output and exit code.
         int_proc = subprocess.run(int_cmd, text=True, capture_output=True)  # noqa: S603
 
     if int_proc.returncode not in (test_case.expected_interpreter_exit_codes or []):
@@ -326,17 +327,18 @@ def _execute_combined_test(
         category_report.test_results[test_case.name] = report
         return
 
-    # --- 3. KROK: KONTROLA VÝSTUPU POMOCOU GNU diff ---
+    # If the interpreter exit code is correct and we have an expected stdout file then we need to compare the actual output with the expected output using GNU diff.
     if int_proc.returncode == 0 and test_case.expected_stdout_file:
-        # Uložíme výstup z interpretu pre komparáciu s diff
+        # Save interpreter output to a temporary file.
         with tempfile.NamedTemporaryFile(mode="w", delete=True) as temp_out:
             temp_out.write(int_proc.stdout)
             temp_out.flush()
 
-            # Podla zadania bez iných parametrov
+            # Rund diff against the expected output file.
             diff_cmd = ["diff", str(test_case.expected_stdout_file), temp_out.name]
             diff_proc = subprocess.run(diff_cmd, text=True, capture_output=True)  # noqa: S603
 
+            # If diff returns a non-zero exit code the test failed.
             if diff_proc.returncode != 0:
                 report = TestCaseReport(
                     result=TestResult.INTERPRETER_RESULT_DIFFERS,
@@ -351,6 +353,7 @@ def _execute_combined_test(
                 category_report.test_results[test_case.name] = report
                 return
 
+    # Build final report for the test case.
     report = TestCaseReport(
         result=TestResult.PASSED,
         parser_exit_code=parser_proc.returncode,
@@ -364,11 +367,12 @@ def _execute_combined_test(
     category_report.passed_points += test_case.points
 
 
-def _execute_parse_only_test(
+def execute_parse_only_test(
     test_case: TestCaseDefinition,
     category_report: CategoryReport,
     parser_cmd: list[str],
 ) -> None:
+    # For parse-only tests, we only need to run the parser and check its exit code against the expected codes.
     source_code = get_source_code(test_case.test_source_path)
     parser_proc = subprocess.run(parser_cmd, input=source_code, text=True, capture_output=True)  # noqa: S603
 
@@ -393,7 +397,7 @@ def _execute_parse_only_test(
     category_report.passed_points += test_case.points
 
 
-def _execute_execute_only_test(
+def execute_execute_only_test(
     test_case: TestCaseDefinition,
     category_report: CategoryReport,
     interpreter_cmd: list[str],
@@ -401,12 +405,14 @@ def _execute_execute_only_test(
     source_code = get_source_code(test_case.test_source_path)
     category_report.total_points += test_case.points
 
+    # Execute only the interpreter. We need to create a temporary file for the source code and pass it to the interpreter using the --source argument.
     with tempfile.NamedTemporaryFile(mode="w", suffix=".xml", delete=True) as temp_xml:
         temp_xml.write(source_code)
         temp_xml.flush()
 
         int_cmd = [*interpreter_cmd, "--source", temp_xml.name]
 
+        # If the test case specifies an input file, we need to pass it to the interpreter using the --input argument.
         if test_case.stdin_file:
             int_cmd.extend(["--input", str(test_case.stdin_file)])
 
@@ -422,7 +428,7 @@ def _execute_execute_only_test(
         category_report.test_results[test_case.name] = report
         return
 
-    # --- KONTROLA VÝSTUPU POMOCOU GNU diff ---
+    # If the interpreter exit code is correct and we have an expected stdout file then we need to compare the actual output with the expected output using GNU diff.
     if int_proc.returncode == 0 and test_case.expected_stdout_file:
         with tempfile.NamedTemporaryFile(mode="w", delete=True) as temp_out:
             temp_out.write(int_proc.stdout)
@@ -454,6 +460,7 @@ def _execute_execute_only_test(
 
 
 def flatten_args(arg_list: list[str] | list[list[str]] | None) -> list[str]:
+    """Helper function to flatten the include/exclude arguments which can be provided in multiple forms (e.g., multiple uses of the same flag with single or multiple values). It takes care of flattening the nested lists and filtering out any non-string values, returning a simple list of strings that can be used for filtering the test cases."""
     if not arg_list:
         return []
 
@@ -465,6 +472,7 @@ def flatten_args(arg_list: list[str] | list[list[str]] | None) -> list[str]:
 
 
 def matches_filter(value: str, patterns: list[str], is_regex: bool) -> bool:
+    """Helper function to check if a given value matches any of the provided patterns, interpreting them as regular expressions if the is_regex flag is set. It iterates through the patterns and checks for a match against the value, returning True if any pattern matches and False otherwise."""
     for p in patterns:
         if is_regex:
             if re.search(p, value):
@@ -532,11 +540,11 @@ def execute_test_case(
     category_report = test_results[test_case.category]
 
     if test_case.test_type == TestCaseType.COMBINED:
-        _execute_combined_test(test_case, category_report, parser_cmd, interpreter_cmd)
+        execute_combined_test(test_case, category_report, parser_cmd, interpreter_cmd)
     elif test_case.test_type == TestCaseType.PARSE_ONLY:
-        _execute_parse_only_test(test_case, category_report, parser_cmd)
+        execute_parse_only_test(test_case, category_report, parser_cmd)
     elif test_case.test_type == TestCaseType.EXECUTE_ONLY:
-        _execute_execute_only_test(test_case, category_report, interpreter_cmd)
+        execute_execute_only_test(test_case, category_report, interpreter_cmd)
 
 
 def main() -> None:

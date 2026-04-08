@@ -8,7 +8,7 @@
 #     -v ./tester:/src/tester \
 #     sol26-check
 # ==============================================================================
-FROM node:24-slim AS check
+FROM node:25-slim AS check
 
 # Instalacia Pythonu a zakladnych nastrojov
 RUN apt-get update && \
@@ -39,7 +39,7 @@ ENTRYPOINT ["/bin/bash"]
 # Pouzitie:
 #   docker build --target build --tag sol26-build .
 # ==============================================================================
-FROM node:24-slim AS build
+FROM node:25-slim AS build
 
 WORKDIR /app
 
@@ -59,7 +59,7 @@ RUN npm run build
 #   docker build --target runtime --tag sol26-runtime .
 #   docker run --rm sol26-runtime --source /path/to/program.xml
 # ==============================================================================
-FROM node:24-slim AS runtime
+FROM node:25-slim AS runtime
 
 WORKDIR /app
 
