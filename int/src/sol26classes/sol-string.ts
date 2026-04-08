@@ -60,16 +60,13 @@ export class SolString extends SolObject {
         "print",
         (recv) => {
           const strVal = (recv as SolString).value;
-          // '\\' -> '\'
-          // '\n' -> native newline
-          // '\'' -> '''
-          const decoded = strVal.replace(/\\(.)/g, (match, p1) => {
-            if (p1 === "n") return "\n";
-            if (p1 === "\\") return "\\";
-            if (p1 === "'") return "'";
-            return match;
-          });
-          process.stdout.write(decoded);
+          //Replace XML whitespace entities with actual whitespace characters for correct console output
+          const decodedStr = strVal
+            .replace(/&#10;/g, "\n")
+            .replace(/&#13;/g, "\r")
+            .replace(/&#9;/g, "\t")
+            .replace(/&#32;/g, " ");
+          process.stdout.write(decodedStr);
           return recv;
         },
       ],

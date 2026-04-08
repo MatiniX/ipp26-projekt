@@ -64,6 +64,16 @@
           </expr>
         </assign>
         <assign order="4">
+          <var name="_"/>
+          <expr>
+            <send selector="foo">
+              <expr>
+                <var name="self"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="5">
           <var name="a"/>
           <expr>
             <send selector="sus">
@@ -73,10 +83,10 @@
             </send>
           </expr>
         </assign>
-        <assign order="5">
+        <assign order="6">
           <var name="b"/>
           <expr>
-            <send selector="sus">
+            <send selector="marker">
               <expr>
                 <var name="super"/>
               </expr>
@@ -92,7 +102,7 @@
         <assign order="1">
           <var name="_"/>
           <expr>
-            <send selector="sus:">
+            <send selector="marker:">
               <expr>
                 <var name="self"/>
               </expr>
@@ -117,7 +127,7 @@
         <assign order="3">
           <var name="b"/>
           <expr>
-            <send selector="sus">
+            <send selector="marker">
               <expr>
                 <var name="self"/>
               </expr>
@@ -134,6 +144,52 @@
     <method selector="wee:">
       <block arity="1">
         <parameter order="1" name="z"/>
+      </block>
+    </method>
+  </class>
+  <class name="Main" parent="Object">
+    <method selector="run">
+      <block arity="0">
+        <assign order="1">
+          <var name="b"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="B"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="2">
+          <var name="_"/>
+          <expr>
+            <send selector="fun">
+              <expr>
+                <var name="b"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="3">
+          <var name="a"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="A"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="4">
+          <var name="_"/>
+          <expr>
+            <send selector="foo">
+              <expr>
+                <var name="a"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
       </block>
     </method>
   </class>

@@ -7,7 +7,7 @@
         <assign order="1">
           <var name="nl"/>
           <expr>
-            <literal class="String" value="\n"/>
+            <literal class="String" value="&#10;"/>
           </expr>
         </assign>
         <assign order="2">
