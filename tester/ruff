@@ -1,9 +1,16 @@
 #!/bin/bash
 # Wrapper skript pre Ruff
 
+# Workaround pre Windows/WSL host Docker volumes, kde nie je mozne upravit
+# executable permissions a sposobuje to EXE002 error vo vsetkych suboroch 
+IGNORE_FLAG=""
+if [[ "$1" == "check" || $# -eq 0 ]]; then
+    IGNORE_FLAG="--ignore=EXE002"
+fi
+
 # Ak nie je zadana cesta, kontroluj len src
 if [[ $# -eq 0 ]]; then
-	exec ruff check src
+	exec ruff check $IGNORE_FLAG src
 fi
 
 if [[ "$1" == "check" || "$1" == "format" ]]; then
@@ -17,8 +24,12 @@ if [[ "$1" == "check" || "$1" == "format" ]]; then
 	done
 
 	if [[ "$has_target" == "false" ]]; then
-		exec ruff "$1" "${@:2}" src
+		exec ruff "$1" $IGNORE_FLAG "${@:2}" src
 	fi
 fi
 
-exec ruff "$@"
+if [[ "$1" == "check" ]]; then
+    exec ruff "$1" $IGNORE_FLAG "${@:2}"
+else
+    exec ruff "$@"
+fi

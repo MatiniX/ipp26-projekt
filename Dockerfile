@@ -24,13 +24,19 @@ WORKDIR /opt/int
 COPY int/package.json int/package-lock.json* ./
 RUN npm install
 
+COPY int/eslint int/prettier ./
+RUN chmod +x /opt/int/eslint /opt/int/prettier
+
 # Pre-instalacia Python dev zavislosti pre tester (ruff, mypy)
 COPY tester/requirements.txt tester/requirements-dev.txt /opt/tester/
 RUN pip install --break-system-packages \
     -r /opt/tester/requirements.txt \
     -r /opt/tester/requirements-dev.txt
 
-WORKDIR /src
+COPY tester/ruff tester/mypy /opt/tester/
+RUN chmod +x /opt/tester/ruff /opt/tester/mypy
+
+WORKDIR /
 ENTRYPOINT ["/bin/bash"]
 
 # ==============================================================================
@@ -63,7 +69,7 @@ FROM node:25-slim AS runtime
 
 WORKDIR /app
 
-# Len production zavislosti (fast-xml-parser)
+# Len production zavislosti
 COPY int/package.json int/package-lock.json* ./
 RUN npm install --omit=dev && npm cache clean --force
 
@@ -105,7 +111,7 @@ COPY tester/src/ /opt/tester/src/
 # Instalacia sol2xml prekladaca a jeho zavislosti
 COPY tester/sol2xml/requirements.txt /opt/sol2xml/
 RUN /opt/tester/.venv/bin/pip install -r /opt/sol2xml/requirements.txt
-COPY tester/sol2xml/sol_to_xml.py /opt/sol2xml/
+COPY tester/sol2xml/sol_to_xml.py tester/sol2xml/parser_output_schema.xsd /opt/sol2xml/
 
 # Entry point aktivuje virtualne prostredie a spusti tester.
 COPY tester/docker-entrypoint.sh /opt/tester/docker-entrypoint.sh

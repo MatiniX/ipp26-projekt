@@ -3,4 +3,12 @@
 export NODE_PATH=/opt/int/node_modules
 export PATH=/opt/int/node_modules/.bin:$PATH
 
-exec npm run format -- "$@"
+if [ ! -d "/src/int/node_modules" ]; then
+  ln -s /opt/int/node_modules /src/int/node_modules
+fi
+
+if [ $# -eq 0 ]; then
+  exec npx prettier --write "src/**/*.ts"
+else
+  exec npx prettier "$@"
+fi

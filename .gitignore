@@ -14,3 +14,6 @@ out_file.xml
 .github
 
 /test/tests/*.json
+/out
+/student-tests
+*.zip
