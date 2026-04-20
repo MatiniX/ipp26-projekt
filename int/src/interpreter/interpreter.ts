@@ -34,7 +34,7 @@ import { SolString } from "../sol26classes/sol-string.js";
 import { SolTrue } from "../sol26classes/sol-true.js";
 import { SolUserObject } from "../sol26classes/sol-user-object.js";
 import { MethodLookupResult } from "./types.js";
-import { ExecutionContext, RuntimeClass } from "./interfaces.js";
+import { CurrentParsingClass, ExecutionContext, RuntimeClass } from "./interfaces.js";
 import {
   BlockStatement,
   ClassDefStatement,
@@ -43,14 +43,14 @@ import {
   Statement,
   StatementVisitor,
 } from "./statement.js";
-import { AssignExpression, Expression, ExpressionVisitor, SolExpresion } from "./expression.js";
+import { AssignExpression, Expression, ExpressionVisitor, SolExpression } from "./expression.js";
 
 const logger = getLogger("interpreter");
 export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<SolObject> {
   public currentProgram: Program | null = null;
   private classRegistry = new Map<string, RuntimeClass>();
   private builtinClassNames: string[] = [];
-  private currentParsingClass: { name: string; userMethods: Map<string, Block> } | null = null;
+  private currentParsingClass: CurrentParsingClass | null = null;
   private contextStack: ExecutionContext[] = [];
 
   public loadProgram(sourceFilePath: string): void {
@@ -102,7 +102,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     this.executeStatement(new SendStatement("Main", "run", []));
   }
 
-  visitExpr(expr: SolExpresion): SolObject {
+  visitExpr(expr: SolExpression): SolObject {
     if (!this.currentContext) {
       throw new InterpreterError(ErrorCode.GENERAL_OTHER, "No execution context available");
     }
@@ -122,7 +122,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     }
     const { env } = this.currentContext;
 
-    const solExpr = new SolExpresion(
+    const solExpr = new SolExpression(
       expr.expr.literal,
       expr.expr.var,
       expr.expr.block,
@@ -149,6 +149,17 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     }
     this.currentContext.lastBlockResult = SolNil.instance;
 
+    const definedParameters = new Set<string>();
+    for (const param of stmt.parameters) {
+      if (definedParameters.has(param.name)) {
+        throw new InterpreterError(
+          ErrorCode.SEM_ERROR,
+          `Duplicate parameter definition: ${param.name}`
+        );
+      }
+      definedParameters.add(param.name);
+    }
+
     for (const assign of stmt.assigns) {
       const assignExpr = new AssignExpression(assign.target, assign.expr);
       const value = this.evaluateExpression(assignExpr);
@@ -162,6 +173,13 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       throw new InterpreterError(
         ErrorCode.SEM_ERROR,
         `Cannot redefine built-in class: ${stmt.name}`
+      );
+    }
+
+    if (stmt.name == stmt.parentName) {
+      throw new InterpreterError(
+        ErrorCode.SEM_ERROR,
+        `Class cannot inherit from itself: ${stmt.name}`
       );
     }
 
@@ -197,6 +215,19 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
       );
     }
 
+    const selectorOverload = stmt.selector.endsWith(":")
+      ? stmt.selector.slice(0, -1)
+      : stmt.selector + ":";
+    if (
+      this.currentParsingClass.userMethods.has(stmt.selector) ||
+      this.currentParsingClass.userMethods.has(selectorOverload)
+    ) {
+      throw new InterpreterError(
+        ErrorCode.SEM_ERROR,
+        `Duplicate method definition: ${stmt.selector}`
+      );
+    }
+
     this.currentParsingClass.userMethods.set(stmt.selector, stmt.block);
   }
 
@@ -204,7 +235,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     const receiverInst = new SolUserObject(stmt.receiver);
 
     const evaluatedArgs: SolObject[] = stmt.args.map((a) => {
-      const solExpr = new SolExpresion(a.expr.literal, a.expr.var, a.expr.block, a.expr.send);
+      const solExpr = new SolExpression(a.expr.literal, a.expr.var, a.expr.block, a.expr.send);
       return this.evaluateExpression(solExpr);
     });
 
@@ -226,8 +257,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
     return expression.accept(this);
   }
 
-  // ── Class registration ───────────────────────────────────────────────────
-
+  // Builtin class registration
   private registerBuiltinClasses(): void {
     this.classRegistry.set("Object", {
       name: "Object",
@@ -343,7 +373,7 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
 
     // Block value/value:/value:value: — handled dynamically based on arity
     if (receiver instanceof SolBlock) {
-      const expectedSelector = valueSelectorForArity(receiver.arity);
+      const expectedSelector = this.valueSelectorForArity(receiver.arity);
       if (selector === expectedSelector) {
         return this.invokeBlock(receiver, args);
       }
@@ -790,10 +820,18 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
    */
   private findBuiltinAncestor(className: string): string | null {
     let current: string | null = className;
+    const visited = new Set<string>();
     while (current !== null) {
       if (this.builtinClassNames.includes(current)) return current;
       const cls = this.classRegistry.get(current);
       if (!cls) return null;
+      if (visited.has(current)) {
+        throw new InterpreterError(
+          ErrorCode.SEM_ERROR,
+          `Cyclic inheritance detected for class: ${className}`
+        );
+      }
+      visited.add(current);
       current = cls.parentName;
     }
     return null;
@@ -829,14 +867,14 @@ export class Interpreter implements StatementVisitor<void>, ExpressionVisitor<So
   public createString(val: string): SolObject {
     return new SolString(val);
   }
-}
 
-/**
- * Selects the appropriate value property based on the number of arguments.
- * @param arity The number of arguments.
- * @returns The selected value property.
- */
-function valueSelectorForArity(arity: number): string {
-  if (arity === 0) return "value";
-  return "value:".repeat(arity);
+  /**
+   * Selects the appropriate value property based on the number of arguments.
+   * @param arity The number of arguments.
+   * @returns The selected value property.
+   */
+  private valueSelectorForArity(arity: number): string {
+    if (arity === 0) return "value";
+    return "value:".repeat(arity);
+  }
 }

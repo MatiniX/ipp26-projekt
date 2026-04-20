@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="SOL26" description="Podľa špecifikácie: ak objekt nemá interné atribúty, equalTo: invokuje identicalTo:">
+  <class name="MyObject" parent="Object"/>
+  <class name="Main" parent="Object">
+    <method selector="run">
+      <block arity="0">
+        <assign order="1">
+          <var name="nl"/>
+          <expr>
+            <literal class="String" value="&#10;"/>
+          </expr>
+        </assign>
+        <assign order="2">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="--- equalTo: fallback to identicalTo: ---"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="3">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="4">
+          <var name="o1"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="MyObject"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="5">
+          <var name="o2"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="MyObject"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="6">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="MyObject 1 equalTo: MyObject 2 (should be false, as they differ): "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="7">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <send selector="equalTo:">
+                      <expr>
+                        <var name="o1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="o2"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="8">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="9">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="MyObject 1 equalTo: MyObject 1 (should be true, same identity): "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="10">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <send selector="equalTo:">
+                      <expr>
+                        <var name="o1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="o1"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="11">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="12">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="True equalTo: True (should be true for singletons): "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="13">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <send selector="equalTo:">
+                      <expr>
+                        <send selector="new">
+                          <expr>
+                            <literal class="class" value="True"/>
+                          </expr>
+                        </send>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <send selector="new">
+                            <expr>
+                              <literal class="class" value="True"/>
+                            </expr>
+                          </send>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="14">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+      </block>
+    </method>
+  </class>
+</program>

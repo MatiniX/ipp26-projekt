@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="SOL26" description="Voláme túto istú metódu znovu a znovu bez podmienky na ukončenie.">
+  <class name="Main" parent="Object">
+    <method selector="loop">
+      <block arity="0">
+        <assign order="1">
+          <var name="_"/>
+          <expr>
+            <send selector="loop">
+              <expr>
+                <var name="self"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+      </block>
+    </method>
+    <method selector="run">
+      <block arity="0">
+        <assign order="1">
+          <var name="nl"/>
+          <expr>
+            <literal class="String" value="&#10;"/>
+          </expr>
+        </assign>
+        <assign order="2">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="--- Test: Infinite Recursion ---"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="3">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="4">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="This should drop the interpreter due to maximum call stack size exceeded."/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="5">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="6">
+          <var name="_"/>
+          <expr>
+            <send selector="loop">
+              <expr>
+                <var name="self"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+      </block>
+    </method>
+  </class>
+</program>

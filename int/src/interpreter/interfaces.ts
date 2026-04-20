@@ -16,3 +16,8 @@ export interface ExecutionContext {
   definingClassName: string | null;
   lastBlockResult: SolObject | null;
 }
+
+export interface CurrentParsingClass {
+  name: string;
+  userMethods: Map<string, Block>;
+}

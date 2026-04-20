@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="SOL26">
+  <class name="MyNil" parent="Nil"/>
+  <class name="MyTrue" parent="True"/>
+  <class name="MyFalse" parent="False"/>
+  <class name="Main" parent="Object">
+    <method selector="run">
+      <block arity="0">
+        <assign order="1">
+          <var name="nl"/>
+          <expr>
+            <literal class="String" value="&#10;"/>
+          </expr>
+        </assign>
+        <assign order="2">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="--- Nil singleton vs MyNil subclass ---"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="3">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="4">
+          <var name="b1"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="Nil"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="5">
+          <var name="b2"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="Nil"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="6">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="Nil identicalTo: Nil should be true: "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="7">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <send selector="identicalTo:">
+                      <expr>
+                        <var name="b1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="b2"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="8">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="9">
+          <var name="n1"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="MyNil"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="10">
+          <var name="n2"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="MyNil"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="11">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="MyNil identicalTo: MyNil should be false: "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="12">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <send selector="identicalTo:">
+                      <expr>
+                        <var name="n1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="n2"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="13">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="14">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="--- True singleton vs MyTrue subclass ---"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="15">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="16">
+          <var name="b1"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="True"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="17">
+          <var name="b2"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="True"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="18">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="True identicalTo: True should be true: "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="19">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <send selector="identicalTo:">
+                      <expr>
+                        <var name="b1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="b2"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="20">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="21">
+          <var name="t1"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="MyTrue"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="22">
+          <var name="t2"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="MyTrue"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="23">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="MyTrue identicalTo: MyTrue should be false: "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="24">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <send selector="identicalTo:">
+                      <expr>
+                        <var name="t1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="t2"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="25">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="26">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="--- False singleton vs MyFalse subclass ---"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="27">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="28">
+          <var name="b1"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="False"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="29">
+          <var name="b2"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="False"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="30">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="False identicalTo: False should be true: "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="31">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <send selector="identicalTo:">
+                      <expr>
+                        <var name="b1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="b2"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="32">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="33">
+          <var name="f1"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="MyFalse"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="34">
+          <var name="f2"/>
+          <expr>
+            <send selector="new">
+              <expr>
+                <literal class="class" value="MyFalse"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="35">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="MyFalse identicalTo: MyFalse should be false: "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="36">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <send selector="identicalTo:">
+                      <expr>
+                        <var name="f1"/>
+                      </expr>
+                      <arg order="1">
+                        <expr>
+                          <var name="f2"/>
+                        </expr>
+                      </arg>
+                    </send>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="37">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+      </block>
+    </method>
+  </class>
+</program>

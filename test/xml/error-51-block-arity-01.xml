@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="SOL26" description="Pripravíme si 1-parametrický blok.">
+  <class name="Main" parent="Object">
+    <method selector="run">
+      <block arity="0">
+        <assign order="1">
+          <var name="b"/>
+          <expr>
+            <block arity="1">
+              <parameter order="1" name="x"/>
+              <assign order="1">
+                <var name="_"/>
+                <expr>
+                  <send selector="print">
+                    <expr>
+                      <send selector="asString">
+                        <expr>
+                          <var name="x"/>
+                        </expr>
+                      </send>
+                    </expr>
+                  </send>
+                </expr>
+              </assign>
+            </block>
+          </expr>
+        </assign>
+        <assign order="2">
+          <var name="_"/>
+          <expr>
+            <send selector="value">
+              <expr>
+                <var name="b"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+      </block>
+    </method>
+  </class>
+</program>

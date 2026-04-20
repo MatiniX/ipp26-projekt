@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="SOL26" description="Tento program testuje kolíziu parametrov s premennými v rámci jedného bloku.">
+  <class name="Main" parent="Object">
+    <method selector="run">
+      <block arity="0">
+        <assign order="1">
+          <var name="b"/>
+          <expr>
+            <block arity="1">
+              <parameter order="1" name="a"/>
+              <assign order="1">
+                <var name="a"/>
+                <expr>
+                  <literal class="Integer" value="42"/>
+                </expr>
+              </assign>
+            </block>
+          </expr>
+        </assign>
+        <assign order="2">
+          <var name="_"/>
+          <expr>
+            <send selector="value:">
+              <expr>
+                <var name="b"/>
+              </expr>
+              <arg order="1">
+                <expr>
+                  <literal class="Integer" value="10"/>
+                </expr>
+              </arg>
+            </send>
+          </expr>
+        </assign>
+      </block>
+    </method>
+  </class>
+</program>

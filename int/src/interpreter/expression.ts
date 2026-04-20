@@ -1,7 +1,7 @@
 import { Block, Expr, Literal, Send, Var } from "./input_model.js";
 
 export interface ExpressionVisitor<R> {
-  visitExpr(expr: SolExpresion): R;
+  visitExpr(expr: SolExpression): R;
   visitAssign(expr: AssignExpression): R;
 }
 
@@ -9,7 +9,7 @@ export abstract class Expression {
   abstract accept<R>(visitor: ExpressionVisitor<R>): R;
 }
 
-export class SolExpresion extends Expression {
+export class SolExpression extends Expression {
   constructor(
     public literal: Literal | null,
     public variable: Var | null,

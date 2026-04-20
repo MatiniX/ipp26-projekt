@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<program language="SOL26" description="Metóda na výpočet faktoriálu rekurzívne">
+  <class name="Main" parent="Object">
+    <method selector="factorial:">
+      <block arity="1">
+        <parameter order="1" name="n"/>
+        <assign order="1">
+          <var name="isZero"/>
+          <expr>
+            <send selector="equalTo:">
+              <expr>
+                <var name="n"/>
+              </expr>
+              <arg order="1">
+                <expr>
+                  <literal class="Integer" value="0"/>
+                </expr>
+              </arg>
+            </send>
+          </expr>
+        </assign>
+        <assign order="2">
+          <var name="res"/>
+          <expr>
+            <send selector="ifTrue:ifFalse:">
+              <expr>
+                <var name="isZero"/>
+              </expr>
+              <arg order="1">
+                <expr>
+                  <block arity="0">
+                    <assign order="1">
+                      <var name="_"/>
+                      <expr>
+                        <literal class="Integer" value="1"/>
+                      </expr>
+                    </assign>
+                  </block>
+                </expr>
+              </arg>
+              <arg order="2">
+                <expr>
+                  <block arity="0">
+                    <assign order="1">
+                      <var name="nMinusOne"/>
+                      <expr>
+                        <send selector="minus:">
+                          <expr>
+                            <var name="n"/>
+                          </expr>
+                          <arg order="1">
+                            <expr>
+                              <literal class="Integer" value="1"/>
+                            </expr>
+                          </arg>
+                        </send>
+                      </expr>
+                    </assign>
+                    <assign order="2">
+                      <var name="prevFact"/>
+                      <expr>
+                        <send selector="factorial:">
+                          <expr>
+                            <var name="self"/>
+                          </expr>
+                          <arg order="1">
+                            <expr>
+                              <var name="nMinusOne"/>
+                            </expr>
+                          </arg>
+                        </send>
+                      </expr>
+                    </assign>
+                    <assign order="3">
+                      <var name="_"/>
+                      <expr>
+                        <send selector="multiplyBy:">
+                          <expr>
+                            <var name="n"/>
+                          </expr>
+                          <arg order="1">
+                            <expr>
+                              <var name="prevFact"/>
+                            </expr>
+                          </arg>
+                        </send>
+                      </expr>
+                    </assign>
+                  </block>
+                </expr>
+              </arg>
+            </send>
+          </expr>
+        </assign>
+      </block>
+    </method>
+    <method selector="run">
+      <block arity="0">
+        <assign order="1">
+          <var name="nl"/>
+          <expr>
+            <literal class="String" value="&#10;"/>
+          </expr>
+        </assign>
+        <assign order="2">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="--- Test: Recursive method call (Factorial) ---"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="3">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="4">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="Calculating factorial of 5..."/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="5">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="6">
+          <var name="r"/>
+          <expr>
+            <send selector="factorial:">
+              <expr>
+                <var name="self"/>
+              </expr>
+              <arg order="1">
+                <expr>
+                  <literal class="Integer" value="5"/>
+                </expr>
+              </arg>
+            </send>
+          </expr>
+        </assign>
+        <assign order="7">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="Result (should be 120): "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="8">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <var name="r"/>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="9">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="10">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="Calculating factorial of 0..."/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="11">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="12">
+          <var name="r"/>
+          <expr>
+            <send selector="factorial:">
+              <expr>
+                <var name="self"/>
+              </expr>
+              <arg order="1">
+                <expr>
+                  <literal class="Integer" value="0"/>
+                </expr>
+              </arg>
+            </send>
+          </expr>
+        </assign>
+        <assign order="13">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <literal class="String" value="Result (should be 1): "/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="14">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <send selector="asString">
+                  <expr>
+                    <var name="r"/>
+                  </expr>
+                </send>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+        <assign order="15">
+          <var name="_"/>
+          <expr>
+            <send selector="print">
+              <expr>
+                <var name="nl"/>
+              </expr>
+            </send>
+          </expr>
+        </assign>
+      </block>
+    </method>
+  </class>
+</program>

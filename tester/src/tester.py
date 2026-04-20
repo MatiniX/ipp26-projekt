@@ -512,35 +512,33 @@ def is_test_included(tc: TestCaseDefinition, args: CliArguments) -> bool:
     exclude_cats = flatten_args(args.exclude_category)
     exclude_tests = flatten_args(args.exclude_test)
 
-    # 1. Inclusion (if any inclusion filters are provided, at least one must match)
     has_any_include = bool(includes or include_cats or include_tests)
-    if has_any_include:
+    if not has_any_include:
+        included = True
+    else:
         included = False
         if includes and (
             matches_filter(tc.name, includes, args.regex_filters)
             or matches_filter(tc.category, includes, args.regex_filters)
         ):
             included = True
-        if include_cats and matches_filter(tc.category, include_cats, args.regex_filters):
+        elif include_cats and matches_filter(tc.category, include_cats, args.regex_filters):
             included = True
-        if include_tests and matches_filter(tc.name, include_tests, args.regex_filters):
+        elif include_tests and matches_filter(tc.name, include_tests, args.regex_filters):
             included = True
-        if not included:
-            return False
 
-    # 2. Exclusion (if any exclusion filter matches, the test is rejected)
     excluded = False
     if excludes and (
         matches_filter(tc.name, excludes, args.regex_filters)
         or matches_filter(tc.category, excludes, args.regex_filters)
     ):
         excluded = True
-    if exclude_cats and matches_filter(tc.category, exclude_cats, args.regex_filters):
+    elif exclude_cats and matches_filter(tc.category, exclude_cats, args.regex_filters):
         excluded = True
-    if exclude_tests and matches_filter(tc.name, exclude_tests, args.regex_filters):
+    elif exclude_tests and matches_filter(tc.name, exclude_tests, args.regex_filters):
         excluded = True
 
-    return not excluded
+    return included and not excluded
 
 
 def execute_test_case(
